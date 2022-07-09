@@ -3,7 +3,7 @@
 # メタデータのリスト取得
 curl http://169.254.169.254/latest/meta-data/
 
-# InstanceProfileのArn取得
+# InstanceProfileのArn取得（パスを`/iam/security-credentials/<ROLE_NAME>`にすると、アクセスキーやIAMロールで利用するトークンが取得できてる）
 curl http://169.254.169.254/latest/meta-data/iam/info/
 ```
 
@@ -21,3 +21,4 @@ curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta
 
 ## 参考リンク
 - [Instance metadata and user data - Amazon Elastic Compute Cloud](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+- [SSRF攻撃によるCapital Oneの個人情報流出についてまとめてみた - piyolog](https://piyolog.hatenadiary.jp/entry/2019/08/06/062154)
