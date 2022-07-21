@@ -1,4 +1,4 @@
-CREATE EXTERNAL TABLE `aws_waf_logs_deme_partition_projection`(
+CREATE EXTERNAL TABLE `aws_waf_logs_demo_partition_projection`(
   `timestamp` bigint COMMENT 'from deserializer', 
   `formatversion` int COMMENT 'from deserializer', 
   `webaclid` string COMMENT 'from deserializer', 
