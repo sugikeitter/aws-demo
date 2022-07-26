@@ -10,7 +10,7 @@ curl -s -w'\n\n' http://169.254.169.254/latest/meta-data/iam/info/
 ## IMDSv2
 ```bash
 # TTLを指定したv2用のトークンをPUTメソッドで取得
-TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 600"`
+TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 600"`
 
 # トークンを利用してメタデータのリスト取得
 curl -s -w'\n\n' -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/
