@@ -1,5 +1,5 @@
 ## 全体図
-![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/launch-ec2-instance/demo-launch-ec2-instance-_Level2_.drawio.svg)
+![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/ec2-launch-instance/demo-launch-ec2-instance-_Level2_.drawio.svg)
 
 ## 手順
 - EC2 インスタンスを起動
@@ -16,4 +16,4 @@ nohup sudo ./httpServer 0.0.0.0 80 &
 ```
 
 ## 全体図（簡略 Ver.）
-![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/launch-ec2-instance/demo-launch-ec2-instance-_Level1_.drawio.svg)
+![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/ec2-launch-instance/demo-launch-ec2-instance-_Level1_.drawio.svg)
