@@ -22,13 +22,14 @@ def ddb_serializer(obj) -> object:
     except Exception:
         return None
 
-def get_item_and_print_result(table, ConsistentRead):
+def get_item_and_print_result(table, Key, ConsistentRead):
     response = table.get_item(
-        Key={'title': 'ドラゴンボール', 'volume': '1'},
+        Key=Key,
         ConsistentRead=ConsistentRead, # True/False
         ReturnConsumedCapacity='TOTAL'
     )
     response.pop('ResponseMetadata')
+    response.update({'Item': {'largeMessage': '吾輩わがはいは猫である。名前はまだ無い〜〜〜'}})
 
     # print('---DynamoDB row response---')
     # print(response)
@@ -40,5 +41,11 @@ def get_item_and_print_result(table, ConsistentRead):
 if __name__ == '__main__':
     dynamodb_resource = boto3.resource('dynamodb')
     table = dynamodb_resource.Table('comic')
-    get_item_and_print_result(table, ConsistentRead=False)
-    get_item_and_print_result(table, ConsistentRead=True)
+    get_item_and_print_result(table, Key={'title': 'ドラゴンボール', 'volume': '1'}, ConsistentRead=False)
+    get_item_and_print_result(table, Key={'title': 'ドラゴンボール', 'volume': '1'}, ConsistentRead=True)
+    
+    # get learge item
+    table = dynamodb_resource.Table('demoThrottling')
+    get_item_and_print_result(table, Key={'id': '002'}, ConsistentRead=False)
+    get_item_and_print_result(table, Key={'id': '002'}, ConsistentRead=True)
+    
