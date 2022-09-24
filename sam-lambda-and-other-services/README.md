@@ -12,6 +12,7 @@
   - Function
     - `get_books`
     - `get_comics`
+- X-Ray
 
 
 ## Deploy the sample application
