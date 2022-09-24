@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-lambda-python3_9
+
+  Sample SAM Template for sam-lambda-python3_9
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    Tracing: Active
+  Api:
+    TracingEnabled: true
+
+Resources:
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+  FunctionGetBook:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: get_books
+      CodeUri: api_books_get/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        HelloWorld:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref RestApi
+            Path: /books
+            Method: get
+      Layers:
+        - !Ref XrayLayer
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref BookTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BookTable
+
+  FunctionGetComic:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: get_comics
+      CodeUri: api_comics_get/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        HelloWorld:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref RestApi
+            Path: /comics
+            Method: get
+      Layers:
+        - !Ref XrayLayer
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref ComicTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ComicTable
+
+  BookTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: book
+      PrimaryKey:
+        Name: title
+        Type: String
+
+  ComicTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: comic
+      AttributeDefinitions:
+        - AttributeName: title
+          AttributeType: S
+        - AttributeName: volume
+          AttributeType: S
+      KeySchema:
+        - AttributeName: title
+          KeyType: HASH
+        - AttributeName: volume
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  XrayLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: lambda_layer/aws_xray_sdk/.
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/books/"
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt FunctionGetBook.Arn
+  HelloWorldFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt FunctionGetBook.Arn
