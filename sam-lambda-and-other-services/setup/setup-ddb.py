@@ -1,3 +1,5 @@
+import os
+
 import boto3
 
 ddb_resource = boto3.resource('dynamodb', region_name='ap-northeast-1')
@@ -30,8 +32,7 @@ with tbl_book.batch_writer() as batch:
       ],
   })
 
-
-
+### comic
 tbl_comic = ddb_resource.Table('comic')
 
 with tbl_comic.batch_writer() as batch:
@@ -76,3 +77,19 @@ with tbl_comic.batch_writer() as batch:
     if i in range(1, 4):
       item['sale'] = 'Y'
     batch.put_item(Item=item)
+
+
+tbl_throttling = ddb_resource.Table('demoThrottling')
+tbl_throttling.put_item(Item={
+    'id': '001',
+    'message': 'Hello, World!!'
+})
+
+largeMessage = ''
+with open(os.path.dirname(__file__) + '/largeMessage.txt') as f:
+    largeMessage = f.read()
+
+tbl_throttling.put_item(Item={
+    'id': '002',
+    'largeMessage': largeMessage
+})
