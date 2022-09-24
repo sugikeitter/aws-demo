@@ -85,12 +85,41 @@ Resources:
           AttributeType: S
         - AttributeName: volume
           AttributeType: S
+        - AttributeName: author
+          AttributeType: S
+        - AttributeName: releaseDate
+          AttributeType: S
+        - AttributeName: sale
+          AttributeType: S
       KeySchema:
         - AttributeName: title
           KeyType: HASH
         - AttributeName: volume
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: releaseDate
+          KeySchema: 
+            - AttributeName: releaseDate
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: sale
+          KeySchema: 
+            - AttributeName: sale
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: author-releaseDate
+          KeySchema: 
+            - AttributeName: author
+              KeyType: HASH
+            - AttributeName: releaseDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
       BillingMode: PAY_PER_REQUEST
+      
 
   XrayLayer:
     Type: AWS::Serverless::LayerVersion
