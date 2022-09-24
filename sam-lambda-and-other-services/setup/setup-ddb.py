@@ -35,33 +35,44 @@ with tbl_book.batch_writer() as batch:
 tbl_comic = ddb_resource.Table('comic')
 
 with tbl_comic.batch_writer() as batch:
-
+  # ゴルゴ13
   title = 'ゴルゴ13'
   author = 'さいとう・たかを'
-  for i in range(1, 5):
-    batch.put_item(Item={
+  for i in range(1, 6):
+    item = {
         'title': title,
         'volume': str(i+8),
         'author': author,
         'releaseDate': '201' + str(i) + '/04/01',
-    })
-
+    }
+    if i % 2 == 0:
+      item['sale'] = 'Y'
+    batch.put_item(Item=item)
+    
+  # こち亀
   title = 'こち亀'
   author = '秋本治'
-  for i in range(1, 7):
-    batch.put_item(Item={
+  for i in range(1, 8):
+    item = {
         'title': title,
-        'volume': str(i+2),
+        'volume': str(i),
         'author': author,
         'releaseDate': '201' + str(i+2) + '/04/01',
-    })
+    }
+    if i % 3 == 0:
+      item['sale'] = 'Y'
+    batch.put_item(Item=item)
 
+  # ドラゴンボール
   title = 'ドラゴンボール'
   author = '鳥山明'
-  for i in range(1, 4):
-    batch.put_item(Item={
+  for i in range(1, 5):
+    item = {
         'title': title,
         'volume': str(i),
         'author': author,
         'releaseDate': '201' + str(i+4) + '/04/01',
-    })
+    }
+    if i in range(1, 4):
+      item['sale'] = 'Y'
+    batch.put_item(Item=item)
