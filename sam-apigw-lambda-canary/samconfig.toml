@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "sam-apigw-lambda-canary"
+# s3_bucket = ""
+s3_prefix = "sam-apigw-lambda-canary"
+region = "ap-northeast-1"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
