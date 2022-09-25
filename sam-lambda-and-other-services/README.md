@@ -6,8 +6,9 @@
     - `/comics GET`
 - DynamoDB
   - Table
-    - `book`
-    - `comic`
+    - `book`: Primary key is Partition Key only.
+    - `comic`: Primary key is Partition Key and Sort Key.
+    - `demoThrottling`: RCU/WCU is 1.
 - Lambda
   - Function
     - `get_books`
