@@ -28,10 +28,10 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        HelloWorld:
+        Index:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /
             Method: get
             RestApiId:
               Ref: RestApi
@@ -45,10 +45,10 @@ Outputs:
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   HelloWorldApi:
     Description: "API Gateway endpoint URL for dev stage for Hello World function"
-    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/hello/"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/"
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
+    Value: !GetAtt IndexHtmlFunction.Arn
   HelloWorldFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+    Value: !GetAtt IndexHtmlFunction.Arn
