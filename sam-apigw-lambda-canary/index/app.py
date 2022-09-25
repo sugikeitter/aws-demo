@@ -4,6 +4,7 @@ HTML_RESPONSE = """
 
 <head>
   <meta charset="utf-8" />
+  <link rel="shortcut icon" href="https://sugikei-webhosting.s3.ap-northeast-1.amazonaws.com/favicon.ico" />
   <style>
     {style}
   </style>
