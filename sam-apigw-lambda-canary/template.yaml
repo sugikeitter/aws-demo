@@ -13,6 +13,7 @@ Globals:
 Resources:
   RestApi:
     Type: AWS::Serverless::Api
+    # TODO 複数のステージ作成とステージ変数で Lambda 関数の ARN指定
     Properties:
       StageName: dev
       Variables:
