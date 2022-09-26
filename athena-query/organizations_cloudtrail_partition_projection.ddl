@@ -63,7 +63,7 @@ TBLPROPERTIES (
     'projection.region.type' = 'enum',
     'projection.region.values'='ap-northeast-1,ap-northeast-2,ap-northeast-3,ap-south-1,ap-southeast-1,ap-southeast-2,ca-central-1,eu-central-1,eu-north-1,eu-west-1,eu-west-2,eu-west-3,sa-east-1,us-east-1,us-east-2,us-west-1,us-west-2',
     'projection.account.type' = 'enum',
-    'projection.account.values' = '123456789012,234567890123',
+    'projection.account.values' = '<<TARGET_ACCOUNT>>,<<TARGET_ACCOUNT>>,<<TARGET_ACCOUNT>>,...',
     'storage.location.template' = 's3://<<YOUR_BUCKET_NAME>>/AWSLogs/<<YOUR_ORGANIZATIONS_ID>>/${account}/CloudTrail/${region}/${date}',
 'compressionType'='gzip',
 'typeOfData'='file',
