@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-sqs-lambda-py
+
+  Sample SAM Template for sam-sqs-lambda-py
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 90
+    Tracing: Active
+  Api:
+    TracingEnabled: true
+    EndpointConfiguration:
+      Type: REGIONAL
+    OpenApiVersion: 3.0.3 # To delete default 'Stage' stage made by SAM # https://docs.aws.amazon.com/ja_jp/serverless-application-model/latest/developerguide/sam-resource-api.html#sam-api-openapiversion
+
+Parameters:
+  ApiGwStage:
+    Type: String
+    Default: Dev
+
+Resources:
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref ApiGwStage
+
+  IndexPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/index/
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref XrayLayer
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref DynamoDBTable
+          API_GW_STAGE: !Ref ApiGwStage
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+          - Sid: "Query"
+            Effect: Allow
+            Action:
+              - "dynamodb:Query"
+            Resource: !GetAtt DynamoDBTable.Arn
+      Architectures:
+        - x86_64
+      Events:
+        MyRestApiGwEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApi
+            Method: GET
+            Path: "/"
+  FunctionToSQS:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/asyncLightRequest/
+      Handler: asyncLightRequest.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref XrayLayer
+      Environment:
+        Variables:
+          SQS_QUEUE_NAME: !GetAtt MySqsQueue.QueueName
+          DDB_TABLE_NAME: !Ref DynamoDBTable
+          API_GW_STAGE: !Ref ApiGwStage
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+            - Sid: "SendMessageTo"
+              Effect: Allow
+              Action:
+                - "sqs:SendMessage"
+                - "sqs:GetQueueUrl"
+                - "sqs:GetQueueAttributes"
+              Resource: !GetAtt MySqsQueue.Arn
+        - Statement:
+          - Sid: "QueryAndPutItem"
+            Effect: Allow
+            Action:
+              - "dynamodb:Query"
+              - "dynamodb:PutItem"
+            Resource: !GetAtt DynamoDBTable.Arn
+      Architectures:
+        - x86_64
+      Events:
+        MyRestApiGwEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApi
+            Method: POST
+            Path: "/asyncLightRequest"
+  FunctionSyncRequestToDdb:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/syncRequest/
+      Handler: syncRequest.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref XrayLayer
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref DynamoDBTable
+          API_GW_STAGE: !Ref ApiGwStage
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+          - Sid: "QueryAndPutItem"
+            Effect: Allow
+            Action:
+              - "dynamodb:Query"
+              - "dynamodb:PutItem"
+            Resource: !GetAtt DynamoDBTable.Arn
+      Architectures:
+        - x86_64
+      Events:
+        MyRestApiGwEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RestApi
+            Method: POST
+            Path: "/syncRequest"
+  FunctionFromSQSToDynamoDB:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/sqsToDdb/
+      Handler: sqsToDdb.lambda_handler
+      Runtime: python3.8
+      Layers:
+        - !Ref XrayLayer
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref DynamoDBTable
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+          - Sid: "PutItemTo"
+            Effect: Allow
+            Action:
+              - "dynamodb:PutItem"
+            Resource: !GetAtt DynamoDBTable.Arn
+      Architectures:
+        - x86_64
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt MySqsQueue.Arn
+            BatchSize: 10
+
+  MySqsQueue:
+    Type: AWS::SQS::Queue
+
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: recieveTime
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: recieveTime
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  XrayLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: lambda_layer/aws_xray_sdk/.
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8 # Required to have AWS SAM build this layer
+Outputs:
+  HelloWorldFunction:
+    Description: "SQS Queue ARN"
+    Value: !GetAtt MySqsQueue.Arn
+  ApiURL:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub
+      - "https://${RestApiId}.execute-api.${AWS::Region}.amazonaws.com/${ApiGwStg}/"
+      - RestApiId:
+          !Ref RestApi
+        ApiGwStg:
+          !Ref ApiGwStage
