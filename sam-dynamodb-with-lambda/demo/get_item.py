@@ -29,7 +29,9 @@ def get_item_and_print_result(table, Key, ConsistentRead):
         ReturnConsumedCapacity='TOTAL'
     )
     response.pop('ResponseMetadata')
-    response.update({'Item': {'largeMessage': '吾輩わがはいは猫である。名前はまだ無い〜〜〜'}})
+    # for learge item trim
+    if response.get('Item', {}).get('largeMessage', False):
+        response.get('Item', {}).update({'largeMessage': '吾輩わがはいは猫である。名前はまだ無い〜〜〜'})
 
     # print('---DynamoDB row response---')
     # print(response)
