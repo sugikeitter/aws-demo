@@ -155,7 +155,8 @@ Resources:
 
   MySqsQueue:
     Type: AWS::SQS::Queue
-
+    Properties:
+      VisibilityTimeout: 210
   DynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
