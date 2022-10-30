@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/ Comment out for CDK
 lib64/
 parts/
 sdist/
