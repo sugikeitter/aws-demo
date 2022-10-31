@@ -3,14 +3,9 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs';
 
-// TODO props TGW, SharedVpc
-export interface PrivateVpcVpnProps {
-
-}
-
 export class PrivateVpcVpn extends Construct {
   public readonly vpc: ec2.Vpc;
-  constructor(scope: Construct, id: string, props: PrivateVpcVpnProps) {
+  constructor(scope: Construct, id: string) {
     super(scope, id);
 
     // Default VPC と同じ IP から PrivateLink 接続を確認するために
@@ -25,16 +20,20 @@ export class PrivateVpcVpn extends Construct {
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         },
         {
-          cidrMask: 28,
-          name: 'clientVpnEni', // TODO Client VPN Endpoint は手動作成
+          cidrMask: 22,
+          name: 'private', // TODO public route to tgw
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         },
         {
-          cidrMask: 22,
-          name: 'private', // TODO public route to tgw
+          cidrMask: 26, // Cidr block must be at least /27
+          name: 'clientVpnEni', // TODO Client VPN Endpoint は手動作成
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         }
       ]
     });
+
+    // TODO 0.0.0.0/0 -> port:80 を許可する SG を作成
+
+    // TODO Client VPN の SG を作成
   }
 }

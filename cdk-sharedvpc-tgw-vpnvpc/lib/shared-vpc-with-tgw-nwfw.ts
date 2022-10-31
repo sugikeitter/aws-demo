@@ -5,15 +5,12 @@ import {
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs';
 
-// TODO props TGW, SharedVpc
-
-export class SharedVpcWithTgwNwfw extends Construct {
+export class SharedVpcWithNwfw extends Construct {
   public readonly vpc: ec2.Vpc;
   public readonly nwfwEndpointIds: string[] = [];
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    // Default VPC と同じ IP から PrivateLink 接続を確認するために
     const MY_SHARED_VPC_TGW_VPN_CIDR = process.env.MY_SHARED_VPC_TGW_VPN_CIDR || "10.90.0.0/16";
     this.vpc = new ec2.Vpc(this, 'DemoSharedVpcTgwNfwf', {
       ipAddresses: ec2.IpAddresses.cidr(MY_SHARED_VPC_TGW_VPN_CIDR),
@@ -22,41 +19,47 @@ export class SharedVpcWithTgwNwfw extends Construct {
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: 'public', // TODO privateAへのルートはnwfw endpoint へのルートを設定
+          name: 'public', // privateA に向けたトラフィックは NWFW endpoint へのルートを設定する
           subnetType: ec2.SubnetType.PUBLIC
         },
         {
           cidrMask: 28,
-          name: 'nwfw',
+          name: 'nwfw', // 0.0.0.0 に向けたトラフィックは NAT Gateway へのルートを設定する
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         },
         {
           cidrMask: 28,
-          name: 'tgw', // TODO Create TGW endpoint to other vpc ip cidr (どうやって受け取る？other vpc を作成する Constructの中で設定が良さそう)
+          name: 'tgw', // 別の Construct で Transit Gateway を作成し、そこで他の NW へのルートを設定する
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         },
         {
           cidrMask: 22,
-          name: 'privateA', // TODO public route to Network Firewall endpoint
+          name: 'privateA', // 0.0.0.0 に向けたトラフィックは NWFW endpoint へのルートを設定する
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         }
       ]
     });
 
-    // TODO Network Firewall Policy
+    // TODO 0.0.0.0/0 -> port:80 を許可する SG を作成
+
+
+    /* Network Firewall 関連のリソースを作成、2022/10 現在では L2 Construct がないため、L1 Construct (CfnXXX) を利用 */
     const nwfwPolicy = new nwfw.CfnFirewallPolicy(this, 'DemoNwfwPolicy', {
       firewallPolicyName: 'demoNwfwPolicy',
+      // 具体的なルールは作成していないが、必要に応じて作成して良い
+      // ひとまずステートフルへも流すようにしておく
       firewallPolicy: {
         statelessDefaultActions: ["aws:forward_to_sfe"],
         statelessFragmentDefaultActions: ["aws:forward_to_sfe"]
       }
     });
 
-    // Network Firewall
     const fw = new nwfw.CfnFirewall(this, 'DemoNwfw', {
       firewallName: 'demoNwfw',
       vpcId: this.vpc.vpcId,
+      // Shared VPC の Network Firewall endpoint 用に作成したサブネットを割り当てる
       subnetMappings: [
+        // TODO AZ は固定で 3 つにしているので、動的に変更する場合はここの処理も
         {subnetId: this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets[0].subnetId},
         {subnetId: this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets[1].subnetId},
         {subnetId: this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets[2].subnetId},
@@ -98,10 +101,5 @@ export class SharedVpcWithTgwNwfw extends Construct {
         vpcEndpointId: this.nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
       }));
     });
-
-
-
-
-
   }
 }

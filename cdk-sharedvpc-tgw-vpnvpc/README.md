@@ -15,6 +15,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## 学んだこと
 ### RouteTable に Route を追加したい場合、`node` を利用
+- https://docs.aws.amazon.com/cdk/api/v2/docs/constructs.Node.html
 ```typescript
 // Network Firewall 作成
 const fw = new nwfw.CfnFirewall(this, 'DemoNwfw', {
