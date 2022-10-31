@@ -9,6 +9,7 @@ import { Construct } from 'constructs';
 
 export class SharedVpcWithTgwNwfw extends Construct {
   public readonly vpc: ec2.Vpc;
+  public readonly nwfwEndpointIds: string[] = [];
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
@@ -51,12 +52,11 @@ export class SharedVpcWithTgwNwfw extends Construct {
       }
     });
 
-    // TODO Network Firewall
+    // Network Firewall
     const fw = new nwfw.CfnFirewall(this, 'DemoNwfw', {
       firewallName: 'demoNwfw',
       vpcId: this.vpc.vpcId,
       subnetMappings: [
-        // TODO vpc.privateSubnets == PRIVATE_WITH_NAT で、vpc.isolatedSubnets == PRIVATE_ISOLATED？
         {subnetId: this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets[0].subnetId},
         {subnetId: this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets[1].subnetId},
         {subnetId: this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets[2].subnetId},
@@ -68,9 +68,8 @@ export class SharedVpcWithTgwNwfw extends Construct {
     //   doc) CfnFirewall.attrEndpointIds: For example: `["us-west-2c:vpce-111122223333", "us-west-2a:vpce-987654321098", "us-west-2b:vpce-012345678901"]`
     // しかしこの時点ではデプロイされていないので ID が確定していないため、console.error(fw.attrEndpointIds); しても [ '#{Token[TOKEN.xxx]}' ] となってしまっていて、Route に渡すための vpce-XXX の値を取り出せない
     // Fn.select などを利用すると、値ではなく参照を利用してデプロイ時に動的に処理をするため抜き出せる (可読性は下がるがここは仕方ない)
-    const nwfwEndpointIds: string[] = [];
     this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) => {
-      nwfwEndpointIds.push(cdk.Fn.select(
+      this.nwfwEndpointIds.push(cdk.Fn.select(
         1,
         cdk.Fn.split(
           ":",
@@ -86,7 +85,7 @@ export class SharedVpcWithTgwNwfw extends Construct {
         subnet.node.children.push(new ec2.CfnRoute(this, 'PublicFwRoute' + i + j, {
           routeTableId: subnet.routeTable.routeTableId,
           destinationCidrBlock: privateSubnet.ipv4CidrBlock, // TODO privateA サブネットの CIDR を取得したいが、愚直に各サブネットごとにやるしかない？
-          vpcEndpointId: nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
+          vpcEndpointId: this.nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
         }));
       });
     });
@@ -96,30 +95,13 @@ export class SharedVpcWithTgwNwfw extends Construct {
       subnet.node.children.push(new ec2.CfnRoute(this, 'PrivateFwRoute' + i, {
         routeTableId: subnet.routeTable.routeTableId,
         destinationCidrBlock: '0.0.0.0/0',
-        vpcEndpointId: nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
+        vpcEndpointId: this.nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
       }));
     });
 
 
-    /* TODO ここから下は Transit Gateway に関する設定なおで tgw.ts に書きたい、そのため nwfwEndpointIds をexportしてあげる必要がある？ */
-    // tgw endpoint があるサブネットから 0.0.0.0 へは Network Firewall endpoint のルートを追加
-    this.vpc.selectSubnets({subnetGroupName: 'tgw'}).subnets.forEach((subnet, i) => {
-      subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedTgwEni' + i, {
-        routeTableId: subnet.routeTable.routeTableId,
-        // destinationCidrBlock: props.vpnVpc.vpcCidrBlock,
-        destinationCidrBlock: "0.0.0.0/0",
-        vpcEndpointId: nwfwEndpointIds[i]
-      }));
-    });
 
-    // PrivateVpcから来たトラフィックをTGWを経由して戻すが、そのためにはNetwork Firewall endpoint を通過させる
-    this.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach((subnet, i) => {
-      subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedPublicToPrivateVpc' + i, {
-        routeTableId: subnet.routeTable.routeTableId,
-        // destinationCidrBlock: props.vpnVpc.vpcCidrBlock,
-        destinationCidrBlock: "10.0.0.0/16", // TODO vpnVpc の CIDR
-        vpcEndpointId: nwfwEndpointIds[i]
-      }));
-    });
+
+
   }
 }
