@@ -35,6 +35,6 @@ export class PrivateVpcVpn extends Construct {
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         }
       ]
-    })
+    });
   }
 }

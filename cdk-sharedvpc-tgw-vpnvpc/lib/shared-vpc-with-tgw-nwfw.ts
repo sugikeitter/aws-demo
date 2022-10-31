@@ -99,5 +99,27 @@ export class SharedVpcWithTgwNwfw extends Construct {
         vpcEndpointId: nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
       }));
     });
+
+
+    /* TODO ここから下は Transit Gateway に関する設定なおで tgw.ts に書きたい、そのため nwfwEndpointIds をexportしてあげる必要がある？ */
+    // tgw endpoint があるサブネットから 0.0.0.0 へは Network Firewall endpoint のルートを追加
+    this.vpc.selectSubnets({subnetGroupName: 'tgw'}).subnets.forEach((subnet, i) => {
+      subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedTgwEni' + i, {
+        routeTableId: subnet.routeTable.routeTableId,
+        // destinationCidrBlock: props.vpnVpc.vpcCidrBlock,
+        destinationCidrBlock: "0.0.0.0/0",
+        vpcEndpointId: nwfwEndpointIds[i]
+      }));
+    });
+
+    // PrivateVpcから来たトラフィックをTGWを経由して戻すが、そのためにはNetwork Firewall endpoint を通過させる
+    this.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach((subnet, i) => {
+      subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedPublicToPrivateVpc' + i, {
+        routeTableId: subnet.routeTable.routeTableId,
+        // destinationCidrBlock: props.vpnVpc.vpcCidrBlock,
+        destinationCidrBlock: "10.0.0.0/16", // TODO vpnVpc の CIDR
+        vpcEndpointId: nwfwEndpointIds[i]
+      }));
+    });
   }
 }
