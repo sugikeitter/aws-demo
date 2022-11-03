@@ -88,7 +88,7 @@ export class SharedVpcWithNwfw extends Construct {
         subnet.node.children.push(new ec2.CfnRoute(this, 'PublicFwRoute' + i + j, {
           routeTableId: subnet.routeTable.routeTableId,
           destinationCidrBlock: privateSubnet.ipv4CidrBlock, // TODO privateA サブネットの CIDR を取得したいが、愚直に各サブネットごとにやるしかない？
-          vpcEndpointId: this.nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
+          vpcEndpointId: this.nwfwEndpointIds[j] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
         }));
       });
     });
