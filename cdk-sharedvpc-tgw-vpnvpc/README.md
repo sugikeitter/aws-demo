@@ -1,5 +1,5 @@
 # Overview
-![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc.drawio.svg)
+![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-NATGW-x2.drawio.svg)
 
 ## Useful commands
 
