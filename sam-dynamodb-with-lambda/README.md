@@ -36,7 +36,7 @@ sam deploy --guided
 To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
 
 ```bash
-aws cloudformation delete-stack --stack-name sam-lambda-python3_9
+aws cloudformation delete-stack --stack-name sam-demo-ddb-wit-lambda-test
 ```
 
 ## Resources
