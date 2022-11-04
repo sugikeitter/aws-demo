@@ -12,7 +12,7 @@ export class SharedVpcWithNwfw extends Construct {
     super(scope, id);
 
     const MY_SHARED_VPC_TGW_VPN_CIDR = process.env.MY_SHARED_VPC_TGW_VPN_CIDR || "10.90.0.0/16";
-    this.vpc = new ec2.Vpc(this, 'DemoSharedVpcTgwNfwf', {
+    this.vpc = new ec2.Vpc(this, 'Vpc', {
       ipAddresses: ec2.IpAddresses.cidr(MY_SHARED_VPC_TGW_VPN_CIDR),
       maxAzs: 3,
       natGateways: 2, // TODO 状況に応じて 1~3 のどれか
@@ -40,12 +40,16 @@ export class SharedVpcWithNwfw extends Construct {
       ]
     });
 
-    // TODO 0.0.0.0/0 -> port:80 を許可する SG を作成
-
+    // 0.0.0.0/0 -> port:80 を許可する SG を作成
+    const sg = new ec2.SecurityGroup(this, 'Port80FromPublic', {
+      securityGroupName: 'Port80FromPublic',
+      vpc: this.vpc
+    });
+    sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80));
 
     /* Network Firewall 関連のリソースを作成、2022/10 現在では L2 Construct がないため、L1 Construct (CfnXXX) を利用 */
     const nwfwPolicy = new nwfw.CfnFirewallPolicy(this, 'DemoNwfwPolicy', {
-      firewallPolicyName: 'demoNwfwPolicy',
+      firewallPolicyName: 'demo-NwfwPolicy',
       // 具体的なルールは作成していないが、必要に応じて作成して良い
       // ひとまずステートフルへも流すようにしておく
       firewallPolicy: {
@@ -54,7 +58,7 @@ export class SharedVpcWithNwfw extends Construct {
       }
     });
 
-    const fw = new nwfw.CfnFirewall(this, 'DemoNwfw', {
+    const fw = new nwfw.CfnFirewall(this, 'Nwfw', {
       firewallName: 'demoNwfw',
       vpcId: this.vpc.vpcId,
       // Shared VPC の Network Firewall endpoint 用に作成したサブネットを割り当てる
@@ -76,16 +80,15 @@ export class SharedVpcWithNwfw extends Construct {
         1,
         cdk.Fn.split(
           ":",
-          cdk.Fn.select(i, fw.attrEndpointIds) // TODO AZ が同じのをConditionで取得
+          cdk.Fn.select(i, fw.attrEndpointIds)
         )
       ));
     });
-    // console.error(nwfwEndpointIds[0]);
 
-    // TODO public サブネットから privateAへのルートは Network Firewall endpoint のルートを追加
+    // public サブネットから privateAへのルートは Network Firewall endpoint のルートを追加
     this.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach((subnet, i) => {
       this.vpc.selectSubnets({subnetGroupName: 'privateA'}).subnets.forEach((privateSubnet, j) => {
-        subnet.node.children.push(new ec2.CfnRoute(this, 'PublicFwRoute' + i + j, {
+        subnet.node.children.push(new ec2.CfnRoute(this, 'PublicToNwFw' + i + j, {
           routeTableId: subnet.routeTable.routeTableId,
           destinationCidrBlock: privateSubnet.ipv4CidrBlock, // TODO privateA サブネットの CIDR を取得したいが、愚直に各サブネットごとにやるしかない？
           vpcEndpointId: this.nwfwEndpointIds[j] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
@@ -95,7 +98,7 @@ export class SharedVpcWithNwfw extends Construct {
 
     // privateA サブネットから 0.0.0.0 へは Network Firewall endpoint のルートを追加
     this.vpc.selectSubnets({subnetGroupName: 'privateA'}).subnets.forEach((subnet, i) => {
-      subnet.node.children.push(new ec2.CfnRoute(this, 'PrivateFwRoute' + i, {
+      subnet.node.children.push(new ec2.CfnRoute(this, 'PrivateToNwFw' + i, {
         routeTableId: subnet.routeTable.routeTableId,
         destinationCidrBlock: '0.0.0.0/0',
         vpcEndpointId: this.nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提

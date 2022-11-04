@@ -5,13 +5,13 @@ import { SharedVpcWithNwfw } from './shared-vpc-with-tgw-nwfw';
 import { TransitGateway } from './transitgateway';
 import { VpcRouteForTgw } from './vpc-route-for-tgw';
 
-export class CdkSharedvpcWithAlbecsAndVpnvpcStack extends cdk.Stack {
+export class CdkMultiVpcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const sharedVpc = new SharedVpcWithNwfw(this, 'DemoSharedVpcWithTgwNwfw');
-    const vpnVpc = new PrivateVpcVpn(this, 'DemoPrivateVpcVpn');
-    const tgw = new TransitGateway(this, 'DemoTgw', {
+    const sharedVpc = new SharedVpcWithNwfw(this, 'SharedVpc');
+    const vpnVpc = new PrivateVpcVpn(this, 'VpnVpc');
+    const tgw = new TransitGateway(this, 'Tgw', {
       sharedVpc: sharedVpc.vpc,
       vpnVpc: vpnVpc.vpc,
     });

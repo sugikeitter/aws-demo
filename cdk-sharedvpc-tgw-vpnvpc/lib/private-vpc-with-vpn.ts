@@ -10,7 +10,7 @@ export class PrivateVpcVpn extends Construct {
 
     // Default VPC と同じ IP から PrivateLink 接続を確認するために
     const MY_PRIVATE_VPCTGW_VPN_CIDR = process.env.MY_PRIVATE_VPCTGW_VPN_CIDR || "10.0.0.0/16";
-    this.vpc = new ec2.Vpc(this, 'DemoPrivateVpcVpn', {
+    this.vpc = new ec2.Vpc(this, 'Vpc', {
       ipAddresses: ec2.IpAddresses.cidr(MY_PRIVATE_VPCTGW_VPN_CIDR),
       maxAzs: 3,
       subnetConfiguration: [
@@ -32,7 +32,12 @@ export class PrivateVpcVpn extends Construct {
       ]
     });
 
-    // TODO 0.0.0.0/0 -> port:80 を許可する SG を作成
+    // 0.0.0.0/0 -> port:80 を許可する SG を作成
+    const sg = new ec2.SecurityGroup(this, 'Port80FromPublic', {
+      securityGroupName: 'Port80FromPublic',
+      vpc: this.vpc
+    });
+    sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80));
 
     // TODO Client VPN の SG を作成
   }

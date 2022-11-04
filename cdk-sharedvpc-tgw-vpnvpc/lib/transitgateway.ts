@@ -13,7 +13,7 @@ export class TransitGateway extends Construct {
   constructor(scope: Construct, id: string, props: TransitGatewayProps) {
     super(scope, id);
     // TransitGateway
-    this.tgw = new ec2.CfnTransitGateway(this, 'DemoTgw', {
+    this.tgw = new ec2.CfnTransitGateway(this, 'Tgw', {
       tags: [{key: 'Name', value: 'DemoTgw'}],
       description: 'Demo Transit Gateway created by CDK',
       defaultRouteTableAssociation: 'disable',
@@ -21,7 +21,7 @@ export class TransitGateway extends Construct {
     });
     // TODO Transit Gateway の作成完了を待つ、でないと Route などの Transit Gateway に関連するリソース作成時に `Error Code: InvalidTransitGatewayID.NotFound` が発生する？
 
-    const tgwAttachSharedVpc = new ec2.CfnTransitGatewayAttachment(this, 'tgwAttachSharedVpc', {
+    const tgwAttachSharedVpc = new ec2.CfnTransitGatewayAttachment(this, 'AttachSharedVpc', {
       tags: [{key: 'Name', value: 'toSharedVpc'}],
       transitGatewayId: this.tgw.attrId,
       vpcId: props.sharedVpc.vpcId,
@@ -31,35 +31,35 @@ export class TransitGateway extends Construct {
     /* TODO Tgw Route Table の Route と Propargation? */
 
     // Shared VPC
-    const tgwRouteTableSharedVpc = new ec2.CfnTransitGatewayRouteTable(this, 'tgwRouteTableSharedVpc', {
+    const tgwRouteTableSharedVpc = new ec2.CfnTransitGatewayRouteTable(this, 'RouteTableSharedVpc', {
       tags: [{key: 'Name', value: 'SharedVpcRoute'}],
       transitGatewayId: this.tgw.attrId,
     });
 
-    const tgwRtAssociationSharedVpc = new ec2.CfnTransitGatewayRouteTableAssociation(this, 'tgwRtAssociationSharedVpc', {
+    const tgwRtAssociationSharedVpc = new ec2.CfnTransitGatewayRouteTableAssociation(this, 'RtAssociationSharedVpc', {
       transitGatewayAttachmentId: tgwAttachSharedVpc.attrId,
       transitGatewayRouteTableId: tgwRouteTableSharedVpc.ref,
     });
 
     // Private VPC
-    const tgwAttachPrivateVpc = new ec2.CfnTransitGatewayAttachment(this, 'tgwAttachPrivateVpc', {
+    const tgwAttachPrivateVpc = new ec2.CfnTransitGatewayAttachment(this, 'AttachPrivateVpc', {
       tags: [{key: 'Name', value: 'toPrivateVpc'}],
       transitGatewayId: this.tgw.attrId,
       vpcId: props.vpnVpc.vpcId,
       subnetIds: props.vpnVpc.selectSubnets({subnetGroupName: 'tgw'}).subnetIds,
     });
 
-    const tgwRouteTablePrivateVpc = new ec2.CfnTransitGatewayRouteTable(this, 'tgwRouteTablePrivateVpc', {
+    const tgwRouteTablePrivateVpc = new ec2.CfnTransitGatewayRouteTable(this, 'RouteTablePrivateVpc', {
       tags: [{key: 'Name', value: 'PrivateVpcRoute'}],
       transitGatewayId: this.tgw.attrId,
     });
 
-    const tgwRtAssociationPrivateVpc = new ec2.CfnTransitGatewayRouteTableAssociation(this, 'tgwRtAssociationPrivateVpc', {
+    const tgwRtAssociationPrivateVpc = new ec2.CfnTransitGatewayRouteTableAssociation(this, 'RtAssociationPrivateVpc', {
       transitGatewayAttachmentId: tgwAttachPrivateVpc.attrId,
       transitGatewayRouteTableId: tgwRouteTablePrivateVpc.ref,
     });
 
-    const tgwRoutePrivateVpc = new ec2.CfnTransitGatewayRoute(this, 'tgwRoutePrivateVpc', {
+    const tgwRoutePrivateVpc = new ec2.CfnTransitGatewayRoute(this, 'RoutePrivateVpc', {
       transitGatewayRouteTableId: tgwRouteTablePrivateVpc.ref,
       destinationCidrBlock: '0.0.0.0/0',
       transitGatewayAttachmentId: tgwAttachSharedVpc.attrId,
@@ -67,7 +67,7 @@ export class TransitGateway extends Construct {
 
     // Propagation はTGWルートテーブルに関連付けているアタッチメントのVPCのCIDR(サブネットではなくVPC)をTGWルートテーブルのルートに設定する
     // SharedVpcが使うルートはprivateVpcへのCIDRを設定する必要があるので、これ使う？
-    const tgwRtPropagationShareVpc = new ec2.CfnTransitGatewayRouteTablePropagation(this, 'tgwRtPropagationShareVpc', {
+    const tgwRtPropagationShareVpc = new ec2.CfnTransitGatewayRouteTablePropagation(this, 'RtPropagationShareVpc', {
       transitGatewayAttachmentId: tgwAttachPrivateVpc.attrId,
       transitGatewayRouteTableId: tgwRouteTableSharedVpc.ref,
     });
