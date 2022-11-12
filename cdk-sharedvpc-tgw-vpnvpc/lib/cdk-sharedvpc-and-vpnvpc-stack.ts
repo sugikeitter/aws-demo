@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { PrivateVpcVpn } from './private-vpc-with-vpn';
+import { SharedVpcAlb } from './shared-vpc-alb';
 import { SharedVpcWithNwfw } from './shared-vpc-with-tgw-nwfw';
 import { TransitGateway } from './transitgateway';
 import { VpcRouteForTgw } from './vpc-route-for-tgw';
@@ -25,5 +26,9 @@ export class CdkMultiVpcsStack extends cdk.Stack {
     // VPC 側のルートで Transit Gateway の ID を参照するため、ルートの設定処理の時点で Transit Gateway 作成が完了していないといけない
     //  そのため VPC 側のルート作成処理だけの Construct を分けて、Transit Gateway 作成の Construct と依存関係を設定
     routeForTgw.node.addDependency(tgw);
+
+    new SharedVpcAlb(this, 'Alb', {
+      vpc: sharedVpc.vpc
+    });
   }
 }
