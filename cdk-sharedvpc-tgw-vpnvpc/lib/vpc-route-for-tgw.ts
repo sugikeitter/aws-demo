@@ -23,7 +23,7 @@ export class VpcRouteForTgw extends Construct {
       }));
     });
 
-    // TODO
+    // SharedVPC → PrivateVPC への経路の場合、NWFW endpoint を経由して TGW へのルートを追加
     props.sharedVpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) => {
       subnet.node.children.push(new ec2.CfnRoute(this, 'TgwRouteShared' + i, {
         routeTableId: subnet.routeTable.routeTableId,
@@ -43,11 +43,16 @@ export class VpcRouteForTgw extends Construct {
 
     // PrivateVpcから来たトラフィックをTGWを経由して戻すが、そのためにはNetwork Firewall endpoint を通過させる
     props.sharedVpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach((subnet, i) => {
-      subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedPublicToPrivateVpc' + i, {
-        routeTableId: subnet.routeTable.routeTableId,
-        destinationCidrBlock: props.vpnVpc.vpcCidrBlock, // vpnVpc の CIDR
-        vpcEndpointId: props.nwfwEndpointIds[i]
-      }));
+      // NATGWがAZの数より少ない場合は非対称ルートが発生しないよう、PrivateVpcのサブネットのCIDRごとに戻りのnwfw endpointのサブネットも行きで通ったAZに戻すルート
+      props.vpnVpc.selectSubnets({subnetGroupName: 'private'}).subnets.forEach((privateSubnetVpnVpc, j) => {
+        subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedPublicToPrivateVpc' + i + j, {
+          routeTableId: subnet.routeTable.routeTableId,
+          destinationCidrBlock: privateSubnetVpnVpc.ipv4CidrBlock, // vpnVpc の サブネットのCIDR
+          vpcEndpointId: props.nwfwEndpointIds[j]
+        }));
+      });
     });
+
+    // TODO S2S VPNをVGWで利用する場合、オンプレのCIDR範囲(任意)であればVGWへ接続するルートを追加
   }
 }

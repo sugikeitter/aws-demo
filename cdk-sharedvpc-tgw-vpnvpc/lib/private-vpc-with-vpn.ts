@@ -8,7 +8,7 @@ export class PrivateVpcVpn extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    // Default VPC と同じ IP から PrivateLink 接続を確認するために
+    // Default VPC と同じ CIDR にしている場合、デフォルト VPC のインスタンスから PrivateLink であれば接続できることの確認も可能
     const MY_PRIVATE_VPCTGW_VPN_CIDR = process.env.MY_PRIVATE_VPCTGW_VPN_CIDR || "10.0.0.0/16";
     this.vpc = new ec2.Vpc(this, 'Vpc', {
       ipAddresses: ec2.IpAddresses.cidr(MY_PRIVATE_VPCTGW_VPN_CIDR),
@@ -40,5 +40,10 @@ export class PrivateVpcVpn extends Construct {
     sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80));
 
     // TODO Client VPN の SG を作成
+
+    // TODO Client VPN エンドポイントを作成？
+    //  現状は手動で ACM の作成と IAM Identity Center の設定をしたエンドポイントを用意している
+
+    // TODO VGW を作成？もしやるならCGWのパブリックIPを決めて、ここで渡さないといけない
   }
 }
