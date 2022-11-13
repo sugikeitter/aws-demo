@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Sample for demo cross stack
+
+Parameters:
+  ImportS3Arn:
+    Description: "***:BucketArn"
+    Type: String
+
+Resources:
+  TempRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Join [ "-", [ "_S3Read", !Ref "AWS::StackName" ] ]
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:List*'
+                  - 's3:Get*'
+                Resource: {"Fn::ImportValue": !Ref ImportS3Arn}
