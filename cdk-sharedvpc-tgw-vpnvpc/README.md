@@ -1,5 +1,8 @@
-# Overview
+# Overview Network
 ![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-NATGW-x2.drawio.svg)
+
+# Overview ALB + Target (ECS / ASG + EC2)
+![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-NATGW-x2-ALB-target.drawio.svg)
 
 ## Useful commands
 
