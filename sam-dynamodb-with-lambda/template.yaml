@@ -17,7 +17,10 @@ Resources:
   RestApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: Prod
+      StageName: prod
+      EndpointConfiguration:
+        Type: REGIONAL
+      OpenApiVersion: 3.0.3 # To delete default 'Stage' stage made by SAM # https://docs.aws.amazon.com/ja_jp/serverless-application-model/latest/developerguide/sam-resource-api.html#sam-api-openapiversion
   FunctionGetBook:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:

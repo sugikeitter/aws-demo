@@ -2,7 +2,7 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "sam-demo-ddb-wit-lambda-test"
+stack_name = "sam-demo-ddb-with-lambda-test"
 # s3_bucket = "YOUR_BUCKET"
 s3_prefix = "sam-demo-ddb-with-lambda-test"
 region = "ap-northeast-1"
