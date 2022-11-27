@@ -17,7 +17,10 @@ HTML_RESPONSE = """
     <div class="splash-container">
       <div class="splash">
         <h1 class="splash-head">{top_message}</h1>
-        <p class="splash-subhead">This page is returned by AWS Lambda</p>
+        <p class="splash-subhead">
+          This page is returned by AWS Lambda<br>
+          Region: {aws_region}
+        </p>
         <p><a class="pure-button pure-button-primary" href="https://aws.amazon.com/jp/lambda/" target="_blank"
             rel="noopener noreferrer">AWS Lambda</a></p>
       </div>
@@ -163,6 +166,8 @@ a.pure-button-primary {
 }
 """
 
+import os
+
 def lambda_handler(event, context):
     return {
         "isBase64Encoded": False,
@@ -172,6 +177,7 @@ def lambda_handler(event, context):
         },
         "body": HTML_RESPONSE.format(
             style=CSS,
-            top_message="Hello, v1"
+            top_message="Hello, v1!",
+            aws_region=os.environ['AWS_REGION']
         ),
     }
