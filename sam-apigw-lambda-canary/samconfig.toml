@@ -8,4 +8,3 @@ s3_prefix = "sam-apigw-lambda-canary"
 region = "ap-northeast-1"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-17idv7qjjwcku"
