@@ -20,8 +20,9 @@ Resources:
         lambda_alias: dev # 統合リクエストの指定がSAMだとできないので、Lambda関数のARNにステージ変数の組み込みができないぽい
       EndpointConfiguration:
         Type: REGIONAL
+      OpenApiVersion: 3.0.3 # To delete default 'Stage' stage made by SAM # https://docs.aws.amazon.com/ja_jp/serverless-application-model/latest/developerguide/sam-resource-api.html#sam-api-openapiversion
   IndexHtmlFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: index/
       Handler: app.lambda_handler
@@ -30,7 +31,7 @@ Resources:
         - x86_64
       Events:
         Index:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /
             Method: get
@@ -39,7 +40,30 @@ Resources:
       AutoPublishAlias: dev
       DeploymentPreference:
         Type: Canary10Percent5Minutes 
-
+  CloudWatchEvidentlyFeatureFlag:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cwevidently/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        Index:
+          Type: Api
+          Properties:
+            Path: /cwevidently
+            Method: get
+            RestApiId:
+              Ref: RestApi
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+          - Sid: "EvaluateFeature"
+            Effect: "Allow"
+            Action:
+              - "evidently:EvaluateFeature"
+            Resource: "*"
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
