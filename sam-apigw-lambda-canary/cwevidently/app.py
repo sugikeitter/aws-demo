@@ -5,7 +5,9 @@ import boto3
 evidently = boto3.client('evidently')
 
 def lambda_handler(event, context):
-  entityId = event.get('queryStringParameters', {}).get('entityId', 'No entityId')
+  entityId = 'No entityId'
+  if event.get('queryStringParameters') != None:
+    entityId = event.get('queryStringParameters', {}).get('entityId', 'No entityId')
   # response examle
   # {
   #   "details": {},
