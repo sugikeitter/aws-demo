@@ -163,7 +163,7 @@ export class SharedVpcAlb extends Construct {
     const ec2Asg = new asg.AutoScalingGroup(this, 'Asg', {
       vpc: props.vpc,
       autoScalingGroupName: "go-http",
-      desiredCapacity: 1,
+      // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
       healthCheck: asg.HealthCheck.elb({
         grace: Duration.seconds(30)
       }),

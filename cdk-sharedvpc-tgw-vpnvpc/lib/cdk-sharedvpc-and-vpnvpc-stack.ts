@@ -1,4 +1,8 @@
-import * as cdk from 'aws-cdk-lib';
+import {
+  Stack,
+  StackProps,
+  aws_ec2 as ec2,
+} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { PrivateVpcVpn } from './private-vpc-with-vpn';
 import { SharedVpcAlb } from './shared-vpc-alb';
@@ -6,11 +10,13 @@ import { SharedVpcWithNwfw } from './shared-vpc-with-tgw-nwfw';
 import { TransitGateway } from './transitgateway';
 import { VpcRouteForTgw } from './vpc-route-for-tgw';
 
-export class CdkMultiVpcsStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class CdkMultiVpcsStack extends Stack {
+  public readonly sharedVpc: ec2.Vpc;
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
     const sharedVpc = new SharedVpcWithNwfw(this, 'SharedVpc');
+    this.sharedVpc = sharedVpc.vpc;
     const vpnVpc = new PrivateVpcVpn(this, 'VpnVpc');
     const tgw = new TransitGateway(this, 'Tgw', {
       sharedVpc: sharedVpc.vpc,
