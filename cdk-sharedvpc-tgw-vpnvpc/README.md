@@ -54,3 +54,22 @@ this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) =>
 ### Transit Gateway が作成完了するまでに id 利用する場合、NotFound になる？
 - リソース作成完了待ちが必要
 - VPC 側のルートを Construct ではなく、既存リソースに注入しているため暗黙的な依存関係が発生しないため、Construct を分けて依存関係設定が必要
+
+### ec2.SubnetSelection をスタック参照の VPC のサブネット指定で利用すると `Cross stack references are only supported for stacks deployed to the same environment or between nested stacks and their parent stack` のエラーになる
+
+こちらのように elb.ApplicationLoadBalancer を new する時の vpc 指定と vpcSubnets 指定があるが、この時に気をつける必要がある
+```typescript
+    const albSubnets: ec2.SubnetSelection = {
+      subnetType: ec2.SubnetType.PUBLIC,
+    };
+
+    const alb = new elb.ApplicationLoadBalancer(this, 'Alb', {
+      loadBalancerName: "DemoAlb",
+      vpc: props.vpc, // 別 Stack の VPC
+      vpcSubnets: albSubnets, // 上で用意した PUBLIC の ec2.SubnetSelection だとエラー
+      // props.vpc.selectSubnets({subnetGroupName: 'public(ここは自分で決めた subnet の名前)'}), のようにしないといけない
+      internetFacing: true,
+      securityGroup: albSg
+    });
+
+```

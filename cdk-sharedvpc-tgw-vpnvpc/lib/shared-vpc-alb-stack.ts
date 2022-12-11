@@ -1,31 +1,37 @@
 import {
+  App,
   aws_autoscaling as asg,
   aws_ec2 as ec2,
   aws_elasticloadbalancingv2 as elb,
   aws_ecs as ecs,
   aws_iam as iam,
+  aws_rds as rds,
   Duration,
+  Stack,
+  StackProps,
 } from 'aws-cdk-lib'
 import { Construct } from 'constructs';
+import { RdsPostgresStack } from './rds-postgres-stack';
 
-export interface SharedVpcAlbProps {
+export interface SharedVpcAlbProps extends StackProps {
   vpc: ec2.Vpc,
+  rdsPostgresStack?: RdsPostgresStack,
 }
-export class SharedVpcAlb extends Construct {
-  constructor(scope: Construct, id: string, props: SharedVpcAlbProps) {
-    super(scope, id);
+export class SharedVpcAlbStack extends Stack {
+  constructor(scope: App, id: string, props: SharedVpcAlbProps) {
+    super(scope, id, props);
 
     /* ALB, Listener, TargetGroup */
     const albSg = new ec2.SecurityGroup(this, 'AlbSg', {
+      // インバウンドルールは ALB のリスナーを作成すると自動生成されるのでここでは設定しない
+      securityGroupName: 'DemoAlbSg',
       vpc: props.vpc,
-    }); // ルールはALBのリスナーを作成すると自動生成されるのでここでは設定しない
-    const albSubnets: ec2.SubnetSelection = {
-      subnetType: ec2.SubnetType.PUBLIC,
-    };
+    });
+
     const alb = new elb.ApplicationLoadBalancer(this, 'Alb', {
       loadBalancerName: "DemoAlb",
       vpc: props.vpc,
-      vpcSubnets: albSubnets,
+      vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'public'}),
       internetFacing: true,
       securityGroup: albSg
     });

@@ -14,6 +14,7 @@ export interface RdsPostgresStackProps extends StackProps {
 export class RdsPostgresStack extends Stack {
   public readonly dbClientSg: ec2.SecurityGroup;
   public readonly dbSg: ec2.SecurityGroup;
+  public readonly dbInstancePostgres: rds.DatabaseInstance;
   constructor(scope: App, id: string, props: RdsPostgresStackProps) {
     super(scope, id, props);
 
@@ -27,7 +28,7 @@ export class RdsPostgresStack extends Stack {
     });
     this.dbSg.addIngressRule(this.dbClientSg, ec2.Port.tcp(5432));
     // TODO INを許可するSGをEC2/ECSから連携する
-    const dbInstance = new rds.DatabaseInstance(this, "RdsPostgres", {
+    this.dbInstancePostgres = new rds.DatabaseInstance(this, "RdsPostgres", {
       instanceIdentifier: 'cdk-postgres',
       engine: rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_14_4 }),
       vpc: props.vpc,
