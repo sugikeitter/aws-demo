@@ -62,6 +62,28 @@ export class SharedVpcAlbStack extends Stack {
     ) as elb.CfnTargetGroup ;
     cfnTargetGroup.targetType = 'ip';
 
+    /* targeType 指定はこっちの方が楽かも？修正できるか検討中 */
+    // const tgEcs = new elb.ApplicationTargetGroup(this, 'TgEcs', {
+    //   targetGroupName: "demoEcs-albDefault",
+    //   vpc: props.vpc,
+    //   targetType: elb.TargetType.IP,
+    //   port: 80,
+    //   targets: [],
+    //   // healthCheck: { // albListener.addTargets で設定しないといけないっぽい
+    //   //   path: "/health",
+    //   //   healthyThresholdCount: 2,
+    //   //   unhealthyThresholdCount: 3
+    //   // },
+    // });
+    // albListener.addTargets('ecs', {
+    //   targetGroupName: tgEcs.targetGroupName,
+    //   healthCheck: {
+    //     path: "/health",
+    //     healthyThresholdCount: 2,
+    //     unhealthyThresholdCount: 3
+    //   },
+    // });
+
     // クエリパラメーター(tg=ec2-asg)
     const targetGroupEc2Asg = albListener.addTargets('ec2-asg', {
       targetGroupName: "demoEc2-asg",
@@ -75,6 +97,24 @@ export class SharedVpcAlbStack extends Stack {
       conditions: [
         elb.ListenerCondition.queryStrings([
           {key: "tg", value: "ec2-asg"}
+        ])
+      ],
+      priority: 1
+    });
+
+    // クエリパラメーター(tg=ec2-rds)
+    const targetGroupEc2Rds = albListener.addTargets('ec2-rds', {
+      targetGroupName: "demoEc2-rds",
+      port: 80,
+      targets: [],
+      healthCheck: {
+        path: "/health",
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3
+      },
+      conditions: [
+        elb.ListenerCondition.queryStrings([
+          {key: "tg", value: "ec2-rds"}
         ])
       ],
       priority: 1
@@ -147,6 +187,7 @@ export class SharedVpcAlbStack extends Stack {
       ec2Sg.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(80));
     });
 
+    /* EC2 Only Server */
     // 起動テンプレート
     const userData = ec2.UserData.forLinux();
     // 本来は必要なパッケージをインストールしたAMIを利用すべき
@@ -169,10 +210,10 @@ export class SharedVpcAlbStack extends Stack {
     const ec2Asg = new asg.AutoScalingGroup(this, 'Asg', {
       vpc: props.vpc,
       autoScalingGroupName: "go-http",
-      // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
       healthCheck: asg.HealthCheck.elb({
         grace: Duration.seconds(30)
       }),
+      // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
       maxCapacity: 3,
       minCapacity: 1,
       launchTemplate: launchTemplate,
@@ -182,6 +223,102 @@ export class SharedVpcAlbStack extends Stack {
     ec2Asg.scaleOnRequestCount('300reqPerMinutes', {
       targetRequestsPerMinute: 300
     });
+
+    /* EC2 with RDS Server */
+    if (props.rdsPostgresStack) {
+      // 起動テンプレート
+      const userData = ec2.UserData.forLinux();
+      // 本来は必要なパッケージをインストールしたAMIを利用すべき
+      userData.addCommands(
+        "yum update -y",
+        "yum install git gcc -y",
+        "amazon-linux-extras install python3.8 postgresql12 -y",
+        "ln -fs /usr/bin/python3.8 /usr/bin/python3",
+        "",
+        "sudo -u ec2-user python3 -m pip install pip --upgrade",
+        "sudo -u ec2-user python3 -m pip install wheel fastapi uvicorn[standard] boto3 Jinja2 sqlalchemy psycopg2-binary python-multipart",
+        "",
+        "sudo -u ec2-user git clone https://github.com/sugikeitter/FastApi-Jinja-SQLAlchemy.git /home/ec2-user/FastApi-Jinja-SQLAlchemy/",
+        "sudo -u ec2-user mkdir /home/ec2-user/log",
+        "",
+        "# systemdの設定",
+        "cat <<EOF > /etc/systemd/system/fastapi.service",
+        "[Unit]",
+        "Description=fastapi",
+        "After=network-online.target",
+        "",
+        "[Service]",
+        "EnvironmentFile=/etc/sysconfig/fastapi_env",
+        "User=ec2-user",
+        "Group=ec2-user",
+        "WorkingDirectory=/home/ec2-user/FastApi-Jinja-SQLAlchemy",
+        "ExecStart=/bin/python3 -m uvicorn main:app --host 0.0.0.0",
+        "ExecStop=/bin/kill -s TERM $MAINPID",
+        "",
+        "[Install]",
+        "WantedBy=multi-user.target",
+        "EOF",
+        "",
+        "# $YOUR_PARAM は書き換え",
+        "cat <<EOF > /etc/sysconfig/fastapi_env",
+        // "RDS_SECRET_ID='" + props.rdsPostgresStack.dbInstancePostgres.secret.secretName + "'", // TODO Error: 'CdkRds' depends on 'Alb' (CdkRds -> Alb/AlbSg/Resource.GroupId). Adding this dependency (Alb -> CdkRds/Sg-PostgresClient/Resource.GroupId) would create a cyclic reference.
+        "RDS_SECRET_ID='" + process.env.RDS_SECRET_ID + "'",
+        "EOF",
+        "",
+        "systemctl start fastapi",
+      );
+      // Secrets Manager へアクセスするポリシーを追加したロール
+      const roleEc2Rds = new iam.Role(this, 'SsmRoleForEc2Rds', {
+        roleName: 'SsmRoleForEc2RdsSecrets',
+        assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
+          iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMPatchAssociation'),
+        ],
+        inlinePolicies: {
+          'ec2RunStartStop': iam.PolicyDocument.fromJson({
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "VisualEditor0",
+                "Effect": "Allow",
+                "Action": "secretsmanager:GetSecretValue",
+                "Resource": [
+                    // TODO スコープを * から props.rdsPostgresStack.dbInstancePostgres.secret.secretName にする
+                    "arn:aws:secretsmanager:*:" + props.env?.account + ":secret:" + process.env.RDS_SECRET_ID,
+                ]
+              }
+            ]
+          })
+        },
+      });
+      const launchTemplate = new ec2.LaunchTemplate(this, 'AmznLinux2Rds', {
+        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
+        machineImage: ec2.MachineImage.latestAmazonLinux({
+          generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
+        }),
+        userData: userData,
+         // constructor では SG の複数設定はできないので、後ほど connections を利用して DB へアクセスできる SG を追加
+        securityGroup: ec2Sg,
+        role: roleEc2Rds,
+      });
+      launchTemplate.connections.addSecurityGroup(props.rdsPostgresStack.dbClientSg);
+
+      // AutoScaling Group(launcTemplateの変数を用意しなくてもASGのプロパティ指定でlaunchTemplateも作成してくれるが、分割した方が今後拡張しやすそうなので)
+      const ec2Asg = new asg.AutoScalingGroup(this, 'AsgRds', {
+        vpc: props.vpc,
+        autoScalingGroupName: "ec2-rds",
+        healthCheck: asg.HealthCheck.elb({
+          grace: Duration.seconds(30)
+        }),
+        // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
+        maxCapacity: 3,
+        minCapacity: 1,
+        launchTemplate: launchTemplate,
+        vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'privateA'}),
+      });
+      ec2Asg.attachToApplicationTargetGroup(targetGroupEc2Asg);
+    }
 
     /* ECSクラスタとタスク実行ロールのみ用意 */
     /* タスク定義はコンテナイメージpushトリガーにCI/CDしたいので、タスク定義に紐づくECSサービスもここでは作成しない */

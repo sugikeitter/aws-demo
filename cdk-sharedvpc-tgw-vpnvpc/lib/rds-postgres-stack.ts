@@ -13,8 +13,9 @@ export interface RdsPostgresStackProps extends StackProps {
 
 export class RdsPostgresStack extends Stack {
   public readonly dbClientSg: ec2.SecurityGroup;
-  public readonly dbSg: ec2.SecurityGroup;
+  public readonly dbServerSg: ec2.SecurityGroup;
   public readonly dbInstancePostgres: rds.DatabaseInstance;
+  public readonly rdsSecretName: string;
   constructor(scope: App, id: string, props: RdsPostgresStackProps) {
     super(scope, id, props);
 
@@ -22,11 +23,11 @@ export class RdsPostgresStack extends Stack {
       securityGroupName: 'Sg-PostgresClient',
       vpc: props.vpc,
     });
-    this.dbSg = new ec2.SecurityGroup(this, 'Sg-Postgres', {
+    this.dbServerSg = new ec2.SecurityGroup(this, 'Sg-Postgres', {
       securityGroupName: 'Sg-Postgres',
       vpc: props.vpc,
     });
-    this.dbSg.addIngressRule(this.dbClientSg, ec2.Port.tcp(5432));
+    this.dbServerSg.addIngressRule(this.dbClientSg, ec2.Port.tcp(5432));
     // TODO INを許可するSGをEC2/ECSから連携する
     this.dbInstancePostgres = new rds.DatabaseInstance(this, "RdsPostgres", {
       instanceIdentifier: 'cdk-postgres',
@@ -35,7 +36,10 @@ export class RdsPostgresStack extends Stack {
       multiAz: true,
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL),
       storageType: rds.StorageType.GP2,
-      securityGroups: [this.dbSg],
+      securityGroups: [this.dbServerSg],
     });
+    if (this.dbInstancePostgres.secret) {
+      this.rdsSecretName = this.dbInstancePostgres.secret.secretName;
+    }
   }
 }
