@@ -10,11 +10,11 @@ import {
   Stack,
   StackProps,
 } from 'aws-cdk-lib'
-import { Construct } from 'constructs';
 import { RdsPostgresStack } from './rds-postgres-stack';
 
 export interface SharedVpcAlbProps extends StackProps {
   vpc: ec2.Vpc,
+  // RDS から欲しいのは secretsName と RDS へ接続できる SG
   rdsPostgresStack?: RdsPostgresStack,
 }
 export class SharedVpcAlbStack extends Stack {
@@ -102,24 +102,6 @@ export class SharedVpcAlbStack extends Stack {
       priority: 1
     });
 
-    // クエリパラメーター(tg=ec2-rds)
-    const targetGroupEc2Rds = albListener.addTargets('ec2-rds', {
-      targetGroupName: "demoEc2-rds",
-      port: 80,
-      targets: [],
-      healthCheck: {
-        path: "/health",
-        healthyThresholdCount: 2,
-        unhealthyThresholdCount: 3
-      },
-      conditions: [
-        elb.ListenerCondition.queryStrings([
-          {key: "tg", value: "ec2-rds"}
-        ])
-      ],
-      priority: 1
-    });
-
     // クエリパラメーター(tg=ecs-bg)
     const targetGroupEcsBg1 = albListener.addTargets('ecs-bg-1', {
       targetGroupName: "demoEcs-bg-1",
@@ -135,7 +117,7 @@ export class SharedVpcAlbStack extends Stack {
           {key: "tg", value: "ecs-bg"}
         ])
       ],
-      priority: 2
+      priority: 3
     });
     const cfnTargetGroupEcsBg1 = targetGroupEcsBg1.node.children.find(
       // `console.error(targetGroup.node.children)`で中を見たところ、id が 'Resource'のnodeしか存在しなかったのでひとまず
@@ -196,6 +178,7 @@ export class SharedVpcAlbStack extends Stack {
       "sudo -u ec2-user chmod 755 /home/ec2-user/httpServer",
       "nohup sudo /home/ec2-user/httpServer 80 &"
     );
+    // TODO 変更してもデフォルトversionは変わらないので、デフォルトバージョン変更方法を探す
     const launchTemplate = new ec2.LaunchTemplate(this, 'AmznLinux2', {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
       machineImage: ec2.MachineImage.latestAmazonLinux({
@@ -204,7 +187,7 @@ export class SharedVpcAlbStack extends Stack {
       userData: userData,
       securityGroup: ec2Sg,
       role: iam.Role.fromRoleName(this, 'SsmRoleForEc2', 'AmazonSSMRoleForInstancesQuickSetup'),
-    })
+    });
 
     // AutoScaling Group(launcTemplateの変数を用意しなくてもASGのプロパティ指定でlaunchTemplateも作成してくれるが、分割した方が今後拡張しやすそうなので)
     const ec2Asg = new asg.AutoScalingGroup(this, 'Asg', {
@@ -214,8 +197,8 @@ export class SharedVpcAlbStack extends Stack {
         grace: Duration.seconds(30)
       }),
       // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
+      minCapacity: 0,
       maxCapacity: 3,
-      minCapacity: 1,
       launchTemplate: launchTemplate,
       vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'privateA'})
     });
@@ -225,7 +208,34 @@ export class SharedVpcAlbStack extends Stack {
     });
 
     /* EC2 with RDS Server */
-    if (props.rdsPostgresStack) {
+    if (props.rdsPostgresStack && props.rdsPostgresStack.dbInstancePostgres.secret) {
+      const alb = new elb.ApplicationLoadBalancer(this, 'AlbEc2Rds', {
+        loadBalancerName: "DemoAlbEc2Rds",
+        vpc: props.vpc,
+        vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'public'}),
+        internetFacing: true,
+        securityGroup: albSg
+      });
+      const albListener = alb.addListener('HttpListener', {
+        port: 80,
+        protocol: elb.ApplicationProtocol.HTTP,
+        open: true,
+      });
+      // クエリパラメーター(tg=ec2-rds)
+      const targetGroupEc2Rds = albListener.addTargets('ec2-rds', {
+        targetGroupName: "demoEc2-rds",
+        port: 8000,
+        targets: [],
+        healthCheck: {
+          path: "/health",
+          // port: "8000",
+          // TODO ASG でヘルスチェックが来ない問題、ASG使わずにターゲット登録するとサービスインできた
+          // TODO cssがtg=ec2-rdsがないので利用できない問題
+          healthyThresholdCount: 2,
+          unhealthyThresholdCount: 3,
+        },
+      });
+
       // 起動テンプレート
       const userData = ec2.UserData.forLinux();
       // 本来は必要なパッケージをインストールしたAMIを利用すべき
@@ -241,7 +251,7 @@ export class SharedVpcAlbStack extends Stack {
         "sudo -u ec2-user git clone https://github.com/sugikeitter/FastApi-Jinja-SQLAlchemy.git /home/ec2-user/FastApi-Jinja-SQLAlchemy/",
         "sudo -u ec2-user mkdir /home/ec2-user/log",
         "",
-        "# systemdの設定",
+        "# setting systemd",
         "cat <<EOF > /etc/systemd/system/fastapi.service",
         "[Unit]",
         "Description=fastapi",
@@ -259,10 +269,9 @@ export class SharedVpcAlbStack extends Stack {
         "WantedBy=multi-user.target",
         "EOF",
         "",
-        "# $YOUR_PARAM は書き換え",
+        "# TODO replace $YOUR_PARAM",
         "cat <<EOF > /etc/sysconfig/fastapi_env",
-        // "RDS_SECRET_ID='" + props.rdsPostgresStack.dbInstancePostgres.secret.secretName + "'", // TODO Error: 'CdkRds' depends on 'Alb' (CdkRds -> Alb/AlbSg/Resource.GroupId). Adding this dependency (Alb -> CdkRds/Sg-PostgresClient/Resource.GroupId) would create a cyclic reference.
-        "RDS_SECRET_ID='" + process.env.RDS_SECRET_ID + "'",
+        "RDS_SECRET_ID='" + props.rdsPostgresStack.dbInstancePostgres.secret.secretName + "'",
         "EOF",
         "",
         "systemctl start fastapi",
@@ -276,21 +285,28 @@ export class SharedVpcAlbStack extends Stack {
           iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMPatchAssociation'),
         ],
         inlinePolicies: {
-          'ec2RunStartStop': iam.PolicyDocument.fromJson({
+          'GetSecretValue': iam.PolicyDocument.fromJson({
             "Version": "2012-10-17",
             "Statement": [
               {
-                "Sid": "VisualEditor0",
+                "Sid": "secretsmanager",
                 "Effect": "Allow",
                 "Action": "secretsmanager:GetSecretValue",
                 "Resource": [
-                    // TODO スコープを * から props.rdsPostgresStack.dbInstancePostgres.secret.secretName にする
-                    "arn:aws:secretsmanager:*:" + props.env?.account + ":secret:" + process.env.RDS_SECRET_ID,
+                    props.rdsPostgresStack.dbInstancePostgres.secret.secretArn,
                 ]
               }
             ]
           })
         },
+      });
+      // ALBからのみアクセスを受けるEC2のSG
+      const ec2Sg = new ec2.SecurityGroup(this, 'port8000FromPublicSubnet', {
+        vpc: props.vpc,
+      });
+      // TODO ALB→NWFW→EC2のサブネットを経由している場合、EC2のSGにALBのSGを指定してもヘルスチェックが到達しないため、IPでIngressRule指定
+      props.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach(subnet => {
+        ec2Sg.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(8000));
       });
       const launchTemplate = new ec2.LaunchTemplate(this, 'AmznLinux2Rds', {
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
@@ -298,27 +314,32 @@ export class SharedVpcAlbStack extends Stack {
           generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
         }),
         userData: userData,
-         // constructor では SG の複数設定はできないので、後ほど connections を利用して DB へアクセスできる SG を追加
+        // constructor では SG の複数設定はできないので、後ほど connections を利用して DB へアクセスできる SG を追加
         securityGroup: ec2Sg,
         role: roleEc2Rds,
       });
-      launchTemplate.connections.addSecurityGroup(props.rdsPostgresStack.dbClientSg);
+      // launchTemplate.connections.addSecurityGroup(props.rdsPostgresStack.dbClientSg);
+      // TODO ↑ Error: 'CdkRds' depends on 'Alb' (CdkRds -> Alb/AlbSg/Resource.GroupId). Adding this dependency (Alb -> CdkRds/RdsPostgres/Secret/Resource.Ref) would create a cyclic reference.
+      //   CDK が ALB と紐付けるために勝手にSGのInboundルールを追加してくれることにより、循環参照になってしまう…ので↓の無理やりねじ込む処理でなんとか動きはする
+      const c = launchTemplate.node.children.find((child) => child instanceof ec2.CfnLaunchTemplate) as ec2.CfnLaunchTemplate;
+      c['_cfnProperties'].launchTemplateData.securityGroupIds = [ec2Sg.securityGroupId, props.rdsPostgresStack.dbClientSg.securityGroupId];
+      // これは NG: c['_cfnProperties'].launchTemplateData.securityGroupIds.push(props.rdsPostgresStack.dbClientSg.securityGroupId);
 
       // AutoScaling Group(launcTemplateの変数を用意しなくてもASGのプロパティ指定でlaunchTemplateも作成してくれるが、分割した方が今後拡張しやすそうなので)
       const ec2Asg = new asg.AutoScalingGroup(this, 'AsgRds', {
         vpc: props.vpc,
         autoScalingGroupName: "ec2-rds",
         healthCheck: asg.HealthCheck.elb({
-          grace: Duration.seconds(30)
+          grace: Duration.seconds(300)
         }),
         // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
+        minCapacity: 0,
         maxCapacity: 3,
-        minCapacity: 1,
         launchTemplate: launchTemplate,
         vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'privateA'}),
       });
-      ec2Asg.attachToApplicationTargetGroup(targetGroupEc2Asg);
-    }
+      ec2Asg.attachToApplicationTargetGroup(targetGroupEc2Rds);
+    };
 
     /* ECSクラスタとタスク実行ロールのみ用意 */
     /* タスク定義はコンテナイメージpushトリガーにCI/CDしたいので、タスク定義に紐づくECSサービスもここでは作成しない */

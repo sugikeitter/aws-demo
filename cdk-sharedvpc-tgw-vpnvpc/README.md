@@ -31,6 +31,30 @@ const fw = new nwfw.CfnFirewall(this, 'DemoNwfw', {
   firewallPolicyArn: nwfwPolicy.attrFirewallPolicyArn
 });
 
+---
+// privateA サブネットから 0.0.0.0 へは Network Firewall endpoint のルートを追加
+this.vpc.selectSubnets({subnetGroupName: 'privateA'}).subnets.forEach((subnet, i) => {
+  subnet.node.children.push(new ec2.CfnRoute(this, 'PrivateToNwFw' + i, {
+    routeTableId: subnet.routeTable.routeTableId,
+    destinationCidrBlock: '0.0.0.0/0',
+    vpcEndpointId: this.nwfwEndpointIds[i] // TODO nwfw の subnetMappings と同じ順でAZが同じになるはずという前提
+  }));
+});
+
+
+## DEBUG
+{CONSTRUCT}.node.children.forEach((child) => {
+  if (child instanceof ec2.CfnInstance) {
+    console.erro(child);
+  }
+});
+
+const c = {CONSTRUCT}.node.children.find((child) => child instanceof ec2.CfnLaunchTemplate) as ec2.CfnLaunchTemplate;
+console.error(c['cfnProperties']); // c['_cfnProperties'] と同じ？
+```
+
+### `cdk synth` 時点 (deploy が完了するまで) は決定しない値を操作したい場合は `Fn::select` や `Fn::split` が必要
+```typescript
 // この時点では fw.attrEndpointIds はデプロイされていないので決まっていない
 //  そのため fw.attrEndpointIds[0] -> {Token} のような一時的なポインタみたいなもの？が入っていてstringとして扱えないため、
 //  fw.attrEndpointIds[0].substring(subnet.availabilityZone.length + 1, fw.attrEndpointIds[0].length) のような処理はできない
@@ -44,9 +68,6 @@ this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) =>
   ));
 });
 ```
-
-### `cdk synth` 時点 (deploy が完了するまで) は決定しない値を操作したい場合は `Fn::select` や `Fn::split` が必要
-
 ### constructA.node.addDependency(constructB)
 - Stack ではなく Construct の依存関係を設定したい場合は `node` を挟む
 - https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html
@@ -75,3 +96,6 @@ this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) =>
 
 ## TODO
 ### ApplicationListener の addAction/addTargetGroups/addTargets の違い
+
+### Stack分割すると参照が辛く、RDSのStackで、dbClientSg→dbServerSg を用意して、ec2のStackにdbClientSgを渡してLaunchTemplateに利用してもらうのが辛い
+LaunchTemplate に SG を紐づけると、CDK が LaunchTemplate と連携する ALB のルールも追加しようとしてくれるから、別Stackから持ってきたSGにALBのルールを追加しようとして循環参照になる
