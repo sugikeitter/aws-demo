@@ -159,12 +159,12 @@ export class SharedVpcAlbStack extends Stack {
     const ec2Sg = new ec2.SecurityGroup(this, 'Ec2FromPublicSubnet', {
       vpc: props.vpc,
     });
-    // TODO ALB→NWFW→EC2のサブネットを経由している場合、EC2のSGにALBのSGを指定してもヘルスチェックが到達しない
+    // ALB→NWFW→EC2のサブネットを経由している場合、以下のような EC2 の SG に ALB の SG を指定してもヘルスチェックが到達しないので注意
     // ec2Sg.addIngressRule(albSg, ec2.Port.tcp(80));
 
-    // TODO とりあえずEC2のSGにはALBのサブネットのIP CIDR指定が必要(もしくはNWFWエンドポイントのENIにSG設定する)
-    //  SharedVPCのパブリックサブネットにALBを作成し、そのALB経由のIngressのトラフィックにNWFWはしない方が良いのか？
-    //  ALBはTGWでSharedVPCに接続できる別のVPCにパブリックサブネット(NATGWはなし)を用意して、そのVPCでALB→EC2を用意すべき？
+    // とりあえずEC2のSGにはALBのサブネットのIP CIDR指定が必要(もしくはNWFWエンドポイントのENIにSG設定する)
+    // MEMO: SharedVPCのパブリックサブネットにALBを作成し、そのALB経由のIngressのトラフィックにNWFWはしない方が良いのか？
+    // MEMO: ALBはTGWでSharedVPCに接続できる別のVPCにパブリックサブネット(NATGWはなし)を用意して、そのVPCでALB→EC2を用意すべき？
     props.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach(subnet => {
       ec2Sg.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(80));
     });
@@ -209,6 +209,7 @@ export class SharedVpcAlbStack extends Stack {
 
     /* EC2 with RDS Server */
     if (props.rdsPostgresStack && props.rdsPostgresStack.dbInstancePostgres.secret) {
+      // RDS をセットで使う場合、ALB や ASG をまるっと専用で作る
       const alb = new elb.ApplicationLoadBalancer(this, 'AlbEc2Rds', {
         loadBalancerName: "DemoAlbEc2Rds",
         vpc: props.vpc,
@@ -221,16 +222,12 @@ export class SharedVpcAlbStack extends Stack {
         protocol: elb.ApplicationProtocol.HTTP,
         open: true,
       });
-      // クエリパラメーター(tg=ec2-rds)
       const targetGroupEc2Rds = albListener.addTargets('ec2-rds', {
         targetGroupName: "demoEc2-rds",
         port: 8000,
         targets: [],
         healthCheck: {
           path: "/health",
-          // port: "8000",
-          // TODO ASG でヘルスチェックが来ない問題、ASG使わずにターゲット登録するとサービスインできた
-          // TODO cssがtg=ec2-rdsがないので利用できない問題
           healthyThresholdCount: 2,
           unhealthyThresholdCount: 3,
         },
@@ -239,6 +236,7 @@ export class SharedVpcAlbStack extends Stack {
       // 起動テンプレート
       const userData = ec2.UserData.forLinux();
       // 本来は必要なパッケージをインストールしたAMIを利用すべき
+      // TODO コードが長くなるしメンテもしづらいので、シェルスクリプトをダウンロードして実行するようにしたいかも
       userData.addCommands(
         "yum update -y",
         "yum install git gcc -y",
@@ -304,7 +302,7 @@ export class SharedVpcAlbStack extends Stack {
       const ec2Sg = new ec2.SecurityGroup(this, 'port8000FromPublicSubnet', {
         vpc: props.vpc,
       });
-      // TODO ALB→NWFW→EC2のサブネットを経由している場合、EC2のSGにALBのSGを指定してもヘルスチェックが到達しないため、IPでIngressRule指定
+      // ALB→NWFW→EC2のサブネットを経由している場合、EC2のSGにALBのSGを指定してもヘルスチェックが到達しないため、IPでIngressRuleを指定する
       props.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach(subnet => {
         ec2Sg.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(8000));
       });
@@ -330,9 +328,9 @@ export class SharedVpcAlbStack extends Stack {
         vpc: props.vpc,
         autoScalingGroupName: "ec2-rds",
         healthCheck: asg.HealthCheck.elb({
-          grace: Duration.seconds(300)
+          grace: Duration.seconds(300) // ここの数値はもう少し減らしても良いかも
         }),
-        // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
+        // desiredCapacity: 1, // CDK-LOG: desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
         minCapacity: 0,
         maxCapacity: 3,
         launchTemplate: launchTemplate,
