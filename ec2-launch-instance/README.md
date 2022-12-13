@@ -13,11 +13,6 @@ cd && curl https://raw.githubusercontent.com/sugikeitter/golang__htmlServerOnAws
 chmod 755 httpServer
 nohup sudo ./httpServer 80 &
 # nohup ./httpServer 8080 & # Not use sudo
-
-### Old ###
-# cd && curl https://raw.githubusercontent.com/sugikeitter/sandbox-go-http-gorilla-mux/main/bin/sandbox-go-http-linux > httpServer
-# chmod 755 httpServer
-# nohup sudo ./httpServer 0.0.0.0 80 &
 ```
 
 ## 全体図（簡略 Ver.）
