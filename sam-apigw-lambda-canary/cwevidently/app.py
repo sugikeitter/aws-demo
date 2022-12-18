@@ -27,7 +27,7 @@ def lambda_handler(event, context):
   featureFlagVariation = res.get('variation', '')
   msg = ''
   if res.get('value', {}).get('boolValue', False):
-    msg = 'あなたはラッキー！特別に割引を提供します😻'
+    msg = 'あなたには新しい画面をお見せしています🎨'
 
   return {
       'statusCode': 200,
