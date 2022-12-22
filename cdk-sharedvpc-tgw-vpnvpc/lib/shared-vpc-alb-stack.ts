@@ -178,8 +178,9 @@ export class SharedVpcAlbStack extends Stack {
       "sudo -u ec2-user chmod 755 /home/ec2-user/httpServer",
       "nohup sudo /home/ec2-user/httpServer 80 &"
     );
-    // TODO 変更してもデフォルトversionは変わらないので、デフォルトバージョン変更方法を探す
-    const launchTemplate = new ec2.LaunchTemplate(this, 'AmznLinux2', {
+    // 変更してもデフォルトversionは最新に変わらないので注意、AutoScalingGroupのコンストラクタのプロパティに渡した場合は、最新Ver.をASGが指定してくれるようにはなっている
+    const launchTemplate = new ec2.LaunchTemplate(this, 'SimpleHttpServer', {
+      launchTemplateName: "http-server-on-aws",
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
       machineImage: ec2.MachineImage.latestAmazonLinux({
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
@@ -306,7 +307,8 @@ export class SharedVpcAlbStack extends Stack {
       props.vpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach(subnet => {
         ec2Sg.addIngressRule(ec2.Peer.ipv4(subnet.ipv4CidrBlock), ec2.Port.tcp(8000));
       });
-      const launchTemplate = new ec2.LaunchTemplate(this, 'AmznLinux2Rds', {
+      const launchTemplate = new ec2.LaunchTemplate(this, 'FastApiJinjaSqlAlchemy', {
+        launchTemplateName: "fastapi-jinja-sqlalchemy",
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
         machineImage: ec2.MachineImage.latestAmazonLinux({
           generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
