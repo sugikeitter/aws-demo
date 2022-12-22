@@ -174,7 +174,7 @@ export class SharedVpcAlbStack extends Stack {
     const userData = ec2.UserData.forLinux();
     // 本来は必要なパッケージをインストールしたAMIを利用すべき
     userData.addCommands(
-      "sudo -u ec2-user sh -c \"curl https://raw.githubusercontent.com/sugikeitter/golang__htmlServerOnAws/main/bin/go-http-linux > /home/ec2-user/httpServer\"",
+      "sudo -u ec2-user sh -c \"curl https://raw.githubusercontent.com/sugikeitter/golang__http-server-on-aws/main/bin/go-http-linux > /home/ec2-user/httpServer\"",
       "sudo -u ec2-user chmod 755 /home/ec2-user/httpServer",
       "nohup sudo /home/ec2-user/httpServer 80 &"
     );
@@ -203,8 +203,8 @@ export class SharedVpcAlbStack extends Stack {
       vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'privateA'})
     });
     ec2Asg.attachToApplicationTargetGroup(targetGroupEc2Asg);
-    ec2Asg.scaleOnRequestCount('300reqPerMinutes', {
-      targetRequestsPerMinute: 300
+    ec2Asg.scaleOnRequestCount('100reqPerMinutes', {
+      targetRequestsPerMinute: 100
     });
 
     /* EC2 with RDS Server */
