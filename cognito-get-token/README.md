@@ -84,3 +84,15 @@ IAM_ROLE_CRED=`curl -s -w'\n' 'https://cognito-identity.ap-northeast-1.amazonaws
 echo $IAM_ROLE_CRED | jq
 ```
 
+```bash
+### CLI ###
+# ID プールの GetId で、IdentityId を取得（結果の参照）
+aws cognito-identity get-id --identity-pool-id ${DEMO_IDENTITY_POOL_ID} --logins "{\"cognito-idp.ap-northeast-1.amazonaws.com/${DEMO_USER_POOL_ID}\":\"${COGNIT_ID_TOKEN}\"}" --output json | jq
+
+# IDプールのAPIのGetIdで、IdentityIdを取得（環境変数に必要な値だけ保存）
+COGNITO_IDENTITY_ID=`aws cognito-identity get-id --identity-pool-id ${DEMO_IDENTITY_POOL_ID} --logins "{\"cognito-idp.ap-northeast-1.amazonaws.com/${DEMO_USER_POOL_ID}\":\"${COGNIT_ID_TOKEN}\"}" --output text --query 'IdentityId'`
+
+# GetCredentialsForIdentity で IAM ロールの認証情報を取得
+# *IAM ロールの認証情報は原則後悔しないこと*
+aws cognito-identity get-credentials-for-identity --identity-id ${COGNITO_IDENTITY_ID} --logins "{\"cognito-idp.ap-northeast-1.amazonaws.com/${DEMO_USER_POOL_ID}\":\"${COGNIT_ID_TOKEN}\"}"
+```
