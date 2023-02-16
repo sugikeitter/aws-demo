@@ -1,4 +1,8 @@
-🚨 パスワードや認証情報は公開しないようにしてください 🚨
+# Cognito でユーザープールから JWT の取得と ID プールから AWS のアクセスキー+セッショントークン取得
+![](https://docs.aws.amazon.com/ja_jp/cognito/latest/developerguide/images/scenario-cup-cib.png)
+https://docs.aws.amazon.com/ja_jp/cognito/latest/developerguide/amazon-cognito-integrating-user-pools-with-identity-pools.html
+
+🚨 通常はパスワードや認証情報は公開しないようにしてください 🚨
 
 ## 準備
 - Cognito のユーザープールと ID プールを作成
@@ -17,9 +21,12 @@ aws cognito-idp admin-set-user-password --user-pool-id ${DEMO_USER_POOL_ID} --us
 ```
 
 ## Cognito のユーザープールから JWT を取得 (登録ユーザーのユーザー名+パスワードを使用)
+![](https://docs.aws.amazon.com/ja_jp/cognito/latest/developerguide/images/cognito-user-pool-auth-flow-srp.png)
+https://docs.aws.amazon.com/ja_jp/cognito/latest/developerguide/amazon-cognito-user-pools-authentication-flow.html
+- 今回は `USER_PASSWORD_AUTH` を使用するため、`InitiateAuth` のみで JWT を取得する
+  - *`USER_PASSWORD_AUTH` はパスワードをネットワーク経由で送るため、通常は使用しないこと* ※今回はわかりやすいのであえて使用
 ```bash
 # 登録済みのユーザー名 & パスワード で認証の API を使用すると JWT 形式の IdToken, AccessToken, RefretshToken が取得できる
-# *USER_PASSWORD_AUTH は通常は使用しないこと*
 COGNITO_INITIATE_AUTH_RESPONSE=`curl -s -w'\n' 'https://cognito-idp.ap-northeast-1.amazonaws.com/' \
 -X POST \
 -H 'Content-Type: application/x-amz-json-1.1' \
@@ -45,9 +52,11 @@ echo $COGNITO_ID_TOKEN
 
 - https://jwt.io/ で `$COGNITO_ID_TOKEN` を検証
 
-TODO 画像
-
 ## Cognito の ID プールから IAM ロールの認証情報を取得 (Cognito ユーザープールから取得した `IdToken` を使用)
+
+![](https://docs.aws.amazon.com/ja_jp/cognito/latest/developerguide/images/amazon-cognito-ext-auth-enhanced-flow.png)
+https://docs.aws.amazon.com/ja_jp/cognito/latest/developerguide/authentication-flow.html
+
 - GetId と GetCredentialsForIdentity の 2 つの API が必要
 ```bash
 # IDプールのGetId エンドポイントのURLはcognito-identity
