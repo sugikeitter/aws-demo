@@ -21,10 +21,10 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
       OpenApiVersion: 3.0.3 # To delete default 'Stage' stage made by SAM # https://docs.aws.amazon.com/ja_jp/serverless-application-model/latest/developerguide/sam-resource-api.html#sam-api-openapiversion
-  IndexHtmlFunction:
+  CloudWatchEvidentlyFeatureFlag:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: index/
+      CodeUri: lambda/cwevidently/
       Handler: app.lambda_handler
       Runtime: python3.9
       Architectures:
@@ -33,24 +33,57 @@ Resources:
         Index:
           Type: Api
           Properties:
-            Path: /
+            Path: /cwevidently
             Method: get
             RestApiId:
               Ref: RestApi
       AutoPublishAlias: dev
       DeploymentPreference:
-        Type: Canary10Percent5Minutes 
+        Type: AllAtOnce
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+          - Sid: "EvaluateFeature"
+            Effect: "Allow"
+            Action:
+              - "evidently:EvaluateFeature"
+            Resource: "*"
+  AppConfigFeatureFlag:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/appconfigfeature/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        Index:
+          Type: Api
+          Properties:
+            Path: /appconfigfeature
+            Method: get
+            RestApiId:
+              Ref: RestApi
+      AutoPublishAlias: dev
+      DeploymentPreference:
+        Type: AllAtOnce
+      Policies:
+        ### 追加のインラインポリシーになる
+        - Statement:
+          - Sid: "getAppconfig"
+            Effect: "Allow"
+            Action:
+              - "appconfig:StartConfigurationSession"
+              - "appconfig:GetLatestConfiguration"
+            Resource: "*"
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for dev stage for Hello World function"
-    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt IndexHtmlFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt IndexHtmlFunction.Arn
+  CloudWatchEvidentlyFeatureFlagApi:
+    Description: "API Gateway endpoint URL for dev stage for CloudWatchEvidentlyFeatureFlag"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/cwevidently"
+  AppConfigFeatureFlagApi:
+    Description: "API Gateway endpoint URL for dev stage for AppConfigFeatureFlag"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/appconfigfeature"

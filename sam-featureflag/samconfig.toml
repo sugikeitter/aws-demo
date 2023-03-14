@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "sam-featureflag"
+# s3_bucket = ""
+s3_prefix = "sam-featureflag"
+region = "ap-northeast-1"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-17idv7qjjwcku"

@@ -51,7 +51,7 @@ class AppConfigFeature(object):
     print("get_config_response:", get_config_response)
 
     # Response always includes a fresh token to use in next call
-    # self._cached_config_token = get_config_response["NextPollConfigurationToken"]
+    self._cached_config_token = get_config_response["NextPollConfigurationToken"]
     # Token will expire if not refreshed within 24 hours, so keep track of
     # the expected expiration time minus a bit of padding
     self._cached_token_expiration_time = datetime.now() + timedelta(hours=23, minutes=59)
