@@ -21,6 +21,7 @@ def get_item_result():
         # return 'ProvisionedThroughputExceededException'
 
 
-for i in range(100):
-    code, result = get_item_result()
-    print('StatusCode=' + str(code) + ', Result=' + result)
+if __name__ == '__main__':
+    for i in range(100):
+        code, result = get_item_result()
+        print('StatusCode=' + str(code) + ', Result=' + result)
