@@ -167,7 +167,7 @@ export class AlbEc2Asg extends Construct {
       healthCheck: asg.HealthCheck.elb({
         grace: Duration.seconds(300) // ここの数値はもう少し減らしても良いかも
       }),
-      // desiredCapacity: 1, // CDK-LOG: desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
+      desiredCapacity: 1,
       minCapacity: 0,
       maxCapacity: 3,
       launchTemplate: launchTemplateForEc2Rds,
@@ -216,7 +216,7 @@ export class AlbEc2Asg extends Construct {
       healthCheck: asg.HealthCheck.elb({
         grace: Duration.seconds(30)
       }),
-      // desiredCapacity: 1, // desiredCapacity has been configured. Be aware this will reset the size of your AutoScalingGroup on every deployment. See https://github.com/aws/aws-cdk/issues/5215
+      desiredCapacity: 1,
       minCapacity: 0,
       maxCapacity: 3,
       launchTemplate: launchTemplate,
