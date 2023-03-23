@@ -1,3 +1,15 @@
+## Build & Deoploy commands
+
+```bash
+# deploy this stack to your default AWS account/region
+AWS_ACCOUNT_ID=123456789012 cdk deploy [--profile {PROFILE_NAME}] {STACK_NAME}
+# compare deployed stack with current state
+AWS_ACCOUNT_ID=123456789012 cdk diff [--profile {PROFILE_NAME}] {STACK_NAME}
+#  emits the synthesized CloudFormation template
+AWS_ACCOUNT_ID=123456789012 cdk synth [--profile {PROFILE_NAME}] {STACK_NAME}
+```
+The `cdk.json` file tells the CDK Toolkit how to execute your app.
+
 # Overview Network
 ![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-NATGW-x2.drawio.svg)
 
@@ -6,18 +18,6 @@
 
 # Overview ALB + ECS
 ![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-ALB-ECS-in-Shared-VPC.drawio.svg)
-
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-
-* `AWS_ACCOUNT_ID=123456789012 cdk deploy [--profile {PROFILE_NAME}] {STACK_NAME}`      deploy this stack to your default AWS account/region
-* `AWS_ACCOUNT_ID=123456789012 cdk diff [--profile {PROFILE_NAME}] {STACK_NAME}`        compare deployed stack with current state
-* `AWS_ACCOUNT_ID=123456789012 cdk synth [--profile {PROFILE_NAME}] {STACK_NAME}`       emits the synthesized CloudFormation template
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## 学んだこと
 ### RouteTable に Route を追加したい場合、`node` を利用
@@ -97,9 +97,6 @@ this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) =>
       securityGroup: albSg
     });
 ```
-
-## TODO
-### ApplicationListener の addAction/addTargetGroups/addTargets の違い
 
 ### Stack分割すると参照が辛く、RDSのStackで、dbClientSg→dbServerSg を用意して、ec2のStackにdbClientSgを渡してLaunchTemplateに利用してもらうのが辛い
 LaunchTemplate に SG を紐づけると、CDK が LaunchTemplate と連携する ALB のルールも追加しようとしてくれるから、別Stackから持ってきたSGにALBのルールを追加しようとして循環参照になる
