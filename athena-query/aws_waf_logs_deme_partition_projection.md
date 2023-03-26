@@ -49,6 +49,6 @@ TBLPROPERTIES (
 ```sql
 SELECT
   DATE_FORMAT(FROM_UNIXTIME(timestamp/1000, 'Asia/Tokyo') ,'%Y-%m-%d %h:%i:%s') as JST
-FROM "default"."aws_waf_logs_demo_ap-northeast-1_partition_projection"
+FROM "default"."aws_waf_logs_demo_partition_projection"
 LIMIT 10;
 ```
