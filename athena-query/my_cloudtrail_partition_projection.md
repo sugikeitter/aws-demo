@@ -1,3 +1,4 @@
+```sql
 CREATE EXTERNAL TABLE default.my_cloudtrail_logs (
     eventVersion STRING,
     userIdentity STRUCT<
@@ -69,3 +70,4 @@ TBLPROPERTIES (
 'typeOfData'='file',
 'classification'='cloudtrail'
 );
+```
