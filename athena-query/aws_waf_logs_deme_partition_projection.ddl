@@ -41,4 +41,5 @@ TBLPROPERTIES (
   'projection.yymmdd.range'='2020/10/01,NOW', 
   'projection.yymmdd.type'='date', 
   'storage.location.template'='s3://<<YOUR_BUCKET_NAME>>/${yymmdd}', 
+--   'storage.location.template'='s3://<<YOUR_BUCKET_NAME>>/AWSLogs/<<YOUR_ACCOUNT_ID>>/WAF/<<REGION_CODE>>/${yymmdd}', -- For SIEM on AWS Bucket
   'typeOfData'='file')
