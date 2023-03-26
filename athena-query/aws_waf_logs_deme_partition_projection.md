@@ -1,3 +1,4 @@
+```sql
 CREATE EXTERNAL TABLE `aws_waf_logs_demo_partition_projection`(
   `timestamp` bigint COMMENT 'from deserializer', 
   `formatversion` int COMMENT 'from deserializer', 
@@ -43,3 +44,11 @@ TBLPROPERTIES (
   'storage.location.template'='s3://<<YOUR_BUCKET_NAME>>/${yymmdd}', 
 --   'storage.location.template'='s3://<<YOUR_BUCKET_NAME>>/AWSLogs/<<YOUR_ACCOUNT_ID>>/WAF/<<REGION_CODE>>/${yymmdd}', -- For SIEM on AWS Bucket
   'typeOfData'='file')
+```
+
+```sql
+SELECT
+  DATE_FORMAT(FROM_UNIXTIME(timestamp/1000, 'Asia/Tokyo') ,'%Y-%m-%d %h:%i:%s') as JST
+FROM "default"."aws_waf_logs_demo_ap-northeast-1_partition_projection"
+LIMIT 10;
+```
