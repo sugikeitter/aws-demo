@@ -48,7 +48,18 @@ TBLPROPERTIES (
 
 ```sql
 SELECT
-  DATE_FORMAT(FROM_UNIXTIME(timestamp/1000, 'Asia/Tokyo') ,'%Y-%m-%d %h:%i:%s') as JST
+  DATE_FORMAT(FROM_UNIXTIME(timestamp/1000, 'Asia/Tokyo') ,'%Y-%m-%d %h:%i:%s') as JST,
+  action,
+  httpsourceid,
+  httprequest.clientip,
+  httprequest.country,
+  httprequest.uri,
+  httprequest.httpmethod,
+  httprequest.headers,
+  httprequest.args
 FROM "default"."aws_waf_logs_demo_partition_projection"
+WHERE
+  action = 'BLOCK'
+  AND yymmdd = '2023/03/26'
 LIMIT 10;
 ```
