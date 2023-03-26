@@ -59,7 +59,7 @@ SELECT
   httprequest.args
 FROM "default"."aws_waf_logs_demo_partition_projection"
 WHERE
-  action = 'BLOCK'
-  AND yymmdd = '2023/03/26'
+  yymmdd = '2023/03/26'
+  AND action = 'BLOCK'
 LIMIT 10;
 ```
