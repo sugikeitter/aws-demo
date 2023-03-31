@@ -4,6 +4,7 @@
 - CSV ファイルを S3 バケットに保存する
   - 今回は [内閣府が公開している「国民の祝日」の CSV](https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html) を、S3 バケットの `s3://${BUCKET_NAME}/csv/syukujitsu_utf8_YYYYMMDD.csv` として保存
     - **※ 文字コードを UTF-8 に変換して S3 に保存する必要あり**
+    - S3 オブジェクトの保存時に、メタデータ（システム定義）で `Content-Type`: `text/plain; charset=UTF-8` を設定する
 
 `内容のサンプル`
 ```csv
