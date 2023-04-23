@@ -41,11 +41,24 @@ export class VpcRouteForTgw extends Construct {
       }));
     });
 
-    // PrivateVpcから来たトラフィックをTGWを経由して戻すが、そのためにはNetwork Firewall endpoint を通過させる
+    // VpnVpc→TGW→IGWのトラフィックをTGWを経由して戻すが、そのためにはNetwork Firewall endpoint を通過させる
     props.sharedVpc.selectSubnets({subnetGroupName: 'public'}).subnets.forEach((subnet, i) => {
       // NATGWがAZの数より少ない場合は非対称ルートが発生しないよう、PrivateVpcのサブネットのCIDRごとに戻りのnwfw endpointのサブネットも行きで通ったAZに戻すルート
       props.vpnVpc.selectSubnets({subnetGroupName: 'private'}).subnets.forEach((privateSubnetVpnVpc, j) => {
         subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedPublicToPrivateVpc' + i + j, {
+          routeTableId: subnet.routeTable.routeTableId,
+          destinationCidrBlock: privateSubnetVpnVpc.ipv4CidrBlock, // vpnVpc の サブネットのCIDR
+          vpcEndpointId: props.nwfwEndpointIds[j]
+        }));
+      });
+    });
+
+    // VpnVpc→TGW→SharedVPC PrivateサブネットのトラフィックをTGWを経由して戻すが、そのためにはNetwork Firewall endpoint を通過させる
+    // TODO Shared VPC の private までは到達するが、戻りの通信がロストしていてこの設定でもまだ不十分
+    props.sharedVpc.selectSubnets({subnetGroupName: 'tgw'}).subnets.forEach((subnet, i) => {
+      // NATGWがAZの数より少ない場合は非対称ルートが発生しないよう、PrivateVpcのサブネットのCIDRごとに戻りのnwfw endpointのサブネットも行きで通ったAZに戻すルート
+      props.sharedVpc.selectSubnets({subnetGroupName: 'privateA'}).subnets.forEach((privateSubnetVpnVpc, j) => {
+        subnet.node.children.push(new ec2.CfnRoute(this, 'RouteSharedPrivateToVpnVpc' + i + j, {
           routeTableId: subnet.routeTable.routeTableId,
           destinationCidrBlock: privateSubnetVpnVpc.ipv4CidrBlock, // vpnVpc の サブネットのCIDR
           vpcEndpointId: props.nwfwEndpointIds[j]
