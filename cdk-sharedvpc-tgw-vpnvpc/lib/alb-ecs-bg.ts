@@ -46,7 +46,7 @@ export class AlbEcs extends Construct {
       cpu: 256,
       memoryLimitMiB: 512,
     });
-    const ecrRepo = ecr.Repository.fromRepositoryName(this, 'GolangDemoHttpRepo', 'golang-demo-http-server-on-aws')
+    const ecrRepo = ecr.Repository.fromRepositoryName(this, 'GolangDemoHttpRepo', 'demo-ecs-bg-deploy-pipeline')
     const latestImage = ecs.ContainerImage.fromEcrRepository(
       ecrRepo,
       'latest'
