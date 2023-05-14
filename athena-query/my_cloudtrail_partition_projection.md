@@ -71,3 +71,21 @@ TBLPROPERTIES (
 'classification'='cloudtrail'
 );
 ```
+```sql
+SELECT
+  eventtime,
+  useridentity.username,
+  eventsource,
+  eventname,
+  errorcode,
+  errormessage,
+  responseelements,
+  requestparameters
+FROM "default"."my_cloudtrail_logs"
+WHERE
+  account = '123456789012'
+  AND region = 'ap-northeast-1'
+  AND date = '2023/01/01'
+  AND useridentity.username = '<ROLE_OR_USER_NAME>'
+ORDER By eventtime desc
+```
