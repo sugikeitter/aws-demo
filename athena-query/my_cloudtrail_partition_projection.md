@@ -74,7 +74,7 @@ TBLPROPERTIES (
 ```sql
 SELECT
   eventtime,
-  useridentity.username,
+  useridentity.arn,
   eventsource,
   eventname,
   errorcode,
@@ -86,6 +86,7 @@ WHERE
   account = '123456789012'
   AND region = 'ap-northeast-1'
   AND date = '2023/01/01'
-  AND useridentity.username = '<ROLE_OR_USER_NAME>'
+--  AND useridentity.username = '<IAM_USER_NAME>'
+--  AND useridentity.sessioncontext.sessionissuer.username = '<IAM_ROLE_NAME>'
 ORDER By eventtime desc
 ```
