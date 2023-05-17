@@ -16,7 +16,7 @@ sudo systemctl enable docker
 # Amazon Linux 2023
 sudo su ec2-user
 sudo dnf update -y
-sudo dnf install docker -y
+sudo dnf install docker git -y
 sudo systemctl start docker
 sudo usermod -a -G docker ec2-user
 sudo systemctl enable docker
@@ -40,8 +40,8 @@ docker rmi `docker images | sed '1d' | awk '{print $3}'`
 ```
 
 ## デモ 
-- Amazon ECR パブリックギャラリー (https://gallery.ecr.aws/) から Ubunts で Nginx コンテナイメージをダウンロードして起動
-  - ホストマシンのポート 80 番でコンテナ上の Nginx で接続できるようにする
+Amazon ECR パブリックギャラリー (https://gallery.ecr.aws/) から Ubunts で Nginx コンテナイメージをダウンロードして起動
+- ホストマシンのポート 80 番でコンテナ上の Nginx で接続できるようにする
 ```bash
 # https://gallery.ecr.aws/ubuntu/nginx
 docker run -d --name nginx-container -e TZ=UTC -p 80:80 public.ecr.aws/ubuntu/nginx:latest
@@ -50,4 +50,50 @@ docker run -d --name nginx-container -e TZ=UTC -p 80:80 public.ecr.aws/ubuntu/ng
 - ホストマシンからコンテナ上の Nginx へ接続確認
 ```bash
 curl localhost:80
+```
+
+Dockerfile からコンテナイメージをビルドして ECR に push
+- ECR にリポジトリを先に作成しておく
+```bash
+# init #
+git clone https://github.com/sugikeitter/golang__http-server-on-aws.git
+cd golang__http-server-on-aws
+
+# build #
+docker images # コンテナイメージが存在しないことを確認
+
+COMMIT_HASH=`git rev-parse HEAD`; echo $COMMIT_HASH
+IMAGE_TAG=$(date +%Y%m%d)-${COMMIT_HASH:0:7}; echo $IMAGE_TAG
+docker build -t golang-demo-http-server-on-aws:${IMAGE_TAG} -t golang-demo-http-server-on-aws:latest .
+
+docker images # コンテナイメージが増えたことを確認
+
+# run # `docker run --rm -p 80:<port> IMAGE <addr> <port>`
+docker ps -a # コンテナのプロセスが起動していないことを確認
+
+docker run -d --rm -p 80:80 --name demo-container golang-demo-http-server-on-aws:${IMAGE_TAG} 80
+
+docker ps -a # コンテナのプロセスが起動していることを確認
+
+docker stop `docker ps -a | sed '1d' | awk '{print $1}'`
+docker ps -a # コンテナのプロセスが起動していないことを確認
+
+# ECR へ login #
+ECR_REGISTRY=$(aws sts get-caller-identity --output text --query Account).dkr.ecr.ap-northeast-1.amazonaws.com
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+
+# push (after login)#
+docker images
+docker tag golang-demo-http-server-on-aws:${IMAGE_TAG} ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG}
+docker images
+
+docker push ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG}
+
+# pull (after login)#
+## ローカルのコンテナイメージを全削除
+docker rmi `docker images | sed '1d' | awk '{print $1 ":" $2}' | grep -v "<none>"`
+docker rmi `docker images | sed '1d' | awk '{print $3}'`
+docker images # ローカルのコンテナイメージを表示 (何も表示されない)
+docker pull ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG} # docker run するならなくても良い
+docker run ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG}
 ```
