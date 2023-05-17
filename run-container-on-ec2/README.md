@@ -95,5 +95,5 @@ docker rmi `docker images | sed '1d' | awk '{print $1 ":" $2}' | grep -v "<none>
 docker rmi `docker images | sed '1d' | awk '{print $3}'`
 docker images # ローカルのコンテナイメージを表示 (何も表示されない)
 docker pull ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG} # docker run するならなくても良い
-docker run ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG}
+docker run -d --rm -p 80:80 --name demo-container ${ECR_REGISTRY}/golang-demo-http-server-on-aws:${IMAGE_TAG} 80
 ```
