@@ -40,7 +40,7 @@ docker rmi `docker images | sed '1d' | awk '{print $3}'`
 ```
 
 ## デモ 
-Amazon ECR パブリックギャラリー (https://gallery.ecr.aws/) から Ubunts で Nginx コンテナイメージをダウンロードして起動
+### Amazon ECR パブリックギャラリー (https://gallery.ecr.aws/) から Ubunts で Nginx コンテナイメージをダウンロードして起動
 - ホストマシンのポート 80 番でコンテナ上の Nginx で接続できるようにする
 ```bash
 # https://gallery.ecr.aws/ubuntu/nginx
@@ -52,7 +52,7 @@ docker run -d --name nginx-container -e TZ=UTC -p 80:80 public.ecr.aws/ubuntu/ng
 curl localhost:80
 ```
 
-Dockerfile からコンテナイメージをビルドして ECR に push
+### Dockerfile からコンテナイメージをビルドして ECR に push / pull
 - ECR にリポジトリを先に作成しておく
 ```bash
 # init #
