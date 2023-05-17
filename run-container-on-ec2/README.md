@@ -4,11 +4,25 @@
   - インバウンドで 80 番ポートを 0.0.0.0/0 からアクセスできるようにしておく (Security Group, パブリック IP など)
 - インスタンスへ接続し、[Amazon Linux2 に Docker をインストール](https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/create-container-image.html)
 ```bash
+# Amazon Linux 2
 sudo yum update -y
 sudo amazon-linux-extras install docker -y
 sudo systemctl start docker
 sudo usermod -a -G docker ec2-user
 sudo systemctl enable docker
+```
+
+```bash
+# Amazon Linux 2023
+sudo su ec2-user
+sudo dnf update -y
+sudo dnf install docker -y
+sudo systemctl start docker
+sudo usermod -a -G docker ec2-user
+sudo systemctl enable docker
+exit # 一度シェルからログアウト
+sudo su ec2-user
+docker ps
 ```
 
 ## デモ実施前作業
@@ -21,6 +35,7 @@ sudo systemctl start docker
 sudo su ec2-user
 docker stop `docker ps -a | sed '1d' | awk '{print $1}'`
 docker rm `docker ps -a | sed '1d' | awk '{print $1}'`
+docker rmi `docker images | sed '1d' | awk '{print $1 ":" $2}' | grep -v "<none>"`
 docker rmi `docker images | sed '1d' | awk '{print $3}'`
 ```
 
