@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import json
+import time
 
 import boto3
 
@@ -7,28 +8,6 @@ APPCONFIG_APPLICATION_NAME = "demoAppCofig"
 APPCONFIG_CONFIG_PROFILE_NAME = "demoFeatureFlag"
 APPCONFIG_ENVIRONMENT_NAME = "demoEnv"
 AWS_REGION = "ap-northeast-1"
-
-appconfigdata = boto3.client("appconfigdata", region_name=AWS_REGION)
-
-def lambda_handler(event, context):
-  app1 = AppConfigFeature()
-  app2 = AppConfigFeature()
-  app3 = AppConfigFeature()
-  app4 = AppConfigFeature()
-  app5 = AppConfigFeature()
-  
-  return {
-    'statusCode': 200,
-    'body': json.dumps({
-        'app1': app1.get_config(),
-        'app2': app2.get_config(),
-        'app3': app3.get_config(),
-        'app4': app4.get_config(),
-        'app5': app5.get_config(),
-      },
-      ensure_ascii=False,
-      indent=2),
-  }
 
 class AppConfigFeature(object):
   _cached_config_data = {}
@@ -60,6 +39,7 @@ class AppConfigFeature(object):
     # the last time we called. So if it's empty we know we already have the latest
     # config, otherwise we need to update our cache.
     content = get_config_response["Configuration"].read()
+    print(content)
     if content:
         try:
             self._cached_config_data = json.loads(content.decode("utf-8"))
@@ -69,3 +49,38 @@ class AppConfigFeature(object):
 
     print("cached_config_data:", self._cached_config_data)
     return self._cached_config_data
+
+
+appconfigdata = boto3.client("appconfigdata", region_name=AWS_REGION)
+app1 = AppConfigFeature()
+app2 = AppConfigFeature()
+app3 = AppConfigFeature()
+app4 = AppConfigFeature()
+app5 = AppConfigFeature()
+
+
+def lambda_handler(event, context):
+  return {
+    'statusCode': 200,
+    'body': json.dumps({
+        'app1': app1.get_config(),
+        'app2': app2.get_config(),
+        'app3': app3.get_config(),
+        'app4': app4.get_config(),
+        'app5': app5.get_config(),
+      },
+      ensure_ascii=False,
+      indent=2),
+  }
+
+
+def local_test():
+    a = AppConfigFeature()
+    for i in range(300):
+        print(str(i) + ":")
+        a.get_config()
+        time.sleep(5)
+
+
+if __name__ == '__main__':
+    local_test()
