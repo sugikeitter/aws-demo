@@ -68,7 +68,7 @@ COGNITO_GET_ID_RESPONSE=`curl -s -w'\n' 'https://cognito-identity.ap-northeast-1
 {
    \"IdentityPoolId\": \"${DEMO_IDENTITY_POOL_ID}\",
    \"Logins\": {
-      \"cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_wq99ovcoE\" : \"${COGNITO_ID_TOKEN}\"
+      \"cognito-idp.ap-northeast-1.amazonaws.com/${DEMO_USER_POOL_ID}\" : \"${COGNITO_ID_TOKEN}\"
    }
 }"`
 
@@ -87,7 +87,7 @@ IAM_ROLE_CRED=`curl -s -w'\n' 'https://cognito-identity.ap-northeast-1.amazonaws
 {
    \"IdentityId\": \"${COGNITO_IDENTITY_ID}\",
    \"Logins\": {
-      \"cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_wq99ovcoE\" : \"${COGNIT_ID_TOKEN}\"
+      \"cognito-idp.ap-northeast-1.amazonaws.com/${DEMO_USER_POOL_ID}\" : \"${COGNIT_ID_TOKEN}\"
    }
 }"`
 
