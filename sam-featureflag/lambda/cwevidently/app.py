@@ -25,16 +25,17 @@ def lambda_handler(event, context):
   )
 
   featureFlagVariation = res.get('variation', '')
-  msg = ''
+  msg = 'ようこそ！'
   if res.get('value', {}).get('boolValue', False):
     msg = 'あなたには新しい画面をお見せしています🎨'
 
   return {
       'statusCode': 200,
       'body': json.dumps({
+        'title': 'Cloud Watch Evidently の動作確認 API',
         'entityId': entityId,
+        'featureFlagVariation': featureFlagVariation,
         'msg': msg,
-        'featureFlagVariation': featureFlagVariation
       },
       ensure_ascii=False,
       indent=2),
