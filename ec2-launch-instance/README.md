@@ -9,6 +9,7 @@
 - インスタンスが起動したら接続して、以下のコマンドを実行して簡易的な Web アプリを起動
 ```bash
 sudo su ec2-user
+# su が完了してから実行
 cd && curl https://raw.githubusercontent.com/sugikeitter/golang__http-server-on-aws/main/bin/go-http-linux > httpServer
 chmod 755 httpServer
 nohup sudo ./httpServer 80 &
