@@ -15,13 +15,14 @@ AWS_REGION=[ap-northeast-1, ap-northeast-3, us-west-2]
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 # Overview Network
-![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-NATGW-x2.drawio.svg)
-
+![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-multi-vpcs/overview.drawio.svg)
+<!--
 # Overview ALB + EC2 + RDS
 ![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-ALB-EC2-in-Shared-VPC.drawio.svg)
 
 # Overview ALB + ECS
 ![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-ALB-ECS-in-Shared-VPC.drawio.svg)
+-->
 
 ## 学んだこと
 ### RouteTable に Route を追加したい場合、`node` を利用
