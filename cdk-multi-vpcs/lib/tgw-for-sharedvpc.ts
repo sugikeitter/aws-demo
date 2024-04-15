@@ -32,8 +32,9 @@ export class TransitGateway extends Construct {
       transitGatewayId: this.tgw.attrId,
       vpcId: props.sharedVpc.vpcId,
       subnetIds: props.sharedVpc.selectSubnets({subnetGroupName: 'tgw'}).subnetIds,
+      // TGW で接続している他の VPC 同士のプライベートな通信も Shared VPC の NWFW を通したい場合はアプライアンスモード有効化が必要
       options: {
-        "ApplianceModeSupport": "enable" // Network Firewall or NW Security Appliances need this settings
+        "ApplianceModeSupport": "enable"
       }
     });
     new ec2.CfnTransitGatewayRouteTableAssociation(this, 'RouteAssociationSharedVpc', {
