@@ -2,7 +2,7 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { MultiVpcsStack } from '../lib/stack-vpcs';
-// import { AlbAppStack } from '../lib/stack-alb-apps';
+import { AlbAppStack } from '../lib/stack-alb-apps';
 
 const app = new cdk.App();
 
@@ -23,7 +23,7 @@ const multiVpcsStack = new MultiVpcsStack(app, 'CdkDemoVpcs', {
   vpcCidrForVPN,
 });
 
-// new AlbAppStack(app, 'CdkDemoApps', {
-//   env: { account: awsAccount, region: awsRegion },
-//   vpc: multiVpcsStack.vpcForPublicApps,
-// });
+new AlbAppStack(app, 'CdkDemoApps', {
+  env: { account: awsAccount, region: awsRegion },
+  vpc: multiVpcsStack.vpcForPublicApps,
+});
