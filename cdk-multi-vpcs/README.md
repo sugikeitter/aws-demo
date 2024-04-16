@@ -24,6 +24,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 ![](https://raw.githubusercontent.com/sugikeitter/aws-demo/main/cdk-sharedvpc-tgw-vpnvpc/cdk-sharedvpc-tgw-vpnvpc-Overview-ALB-ECS-in-Shared-VPC.drawio.svg)
 -->
 
+<!--
 ## 学んだこと
 ### RouteTable に Route を追加したい場合、`node` を利用
 - https://docs.aws.amazon.com/cdk/api/v2/docs/constructs.Node.html
@@ -105,3 +106,5 @@ this.vpc.selectSubnets({subnetGroupName: 'nwfw'}).subnets.forEach((subnet, i) =>
 
 ### Stack分割すると参照が辛く、RDSのStackで、dbClientSg→dbServerSg を用意して、ec2のStackにdbClientSgを渡してLaunchTemplateに利用してもらうのが辛い
 LaunchTemplate に SG を紐づけると、CDK が LaunchTemplate と連携する ALB のルールも追加しようとしてくれるから、別Stackから持ってきたSGにALBのルールを追加しようとして循環参照になる
+-->
+
