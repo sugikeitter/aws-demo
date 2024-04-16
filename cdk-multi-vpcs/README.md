@@ -11,6 +11,12 @@ AWS_ACCOUNT_ID=<YOUR_ACCOUNT_ID> cdk synth [--profile <YOUR_PROFILE_NAME>] <YOUR
 # Option
 MAX_AZS=[2, 3]
 AWS_REGION=[ap-northeast-1, ap-northeast-3, us-west-2]
+
+# 3 つの VPC と Transit Gateway をデプロイする場合
+AWS_ACCOUNT_ID=<YOUR_ACCOUNT_ID> cdk deploy CdkDemoVpcs
+
+# ALB + EC2/ECS のアプリケーションをデプロイする場合 (事前に CodeCommit/ECR/ACM/Route 53 などの準備が必要)
+AWS_ACCOUNT_ID=<YOUR_ACCOUNT_ID> cdk deploy CdkDemoApps
 ```
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
