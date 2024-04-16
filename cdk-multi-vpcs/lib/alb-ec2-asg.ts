@@ -10,16 +10,22 @@ import {
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
-import { RdsPostgres } from './rds-postgres'
+// import { RdsPostgres } from './rds-postgres'
 
 export interface AlbEc2AsgProps {
   vpc: ec2.Vpc;
-  rdsPostgres?: RdsPostgres;
+  albListenerHttps: elb.ApplicationListener,
+  // rdsPostgres?: RdsPostgres;
 }
 
 export class AlbEc2Asg extends Construct {
   constructor(scope: Construct, id: string, props: AlbEc2AsgProps) {
     super(scope, id)
+
+    /* https://ec2-asg.alb.example.com のような独自ドメインで ALB に https アクセスするために Route53 に A レコード作成 */
+    // TODO: Route53 のホストゾーンを作成し、SSM パラメーターストアにゾーン ID とゾーン名を用意しておく
+    const hostedZoneName = ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/domain/hostedZoneName');
+    const hostedAoneId = ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/domain/hostedZoneId');
 
     /* ASG 用のインスタンスの起動テンプレート */
     // ALBからのみアクセスを受けるEC2のSG
@@ -62,32 +68,7 @@ export class AlbEc2Asg extends Construct {
       vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'privateA'})
     });
 
-    /* ALB とリスナーを作成し、ターゲットグループに ASG を紐づける */
-    const albSg = new ec2.SecurityGroup(this, 'AlbSg', {
-      // インバウンドルールは ALB のリスナーを作成すると自動生成されるのでここでは設定しない
-      // securityGroupName: 'DemoAlbSg',
-      vpc: props.vpc,
-    });
-    const demoAlb = new elb.ApplicationLoadBalancer(this, 'Alb', {
-      // loadBalancerName: "DemoAlb",
-      vpc: props.vpc,
-      vpcSubnets: props.vpc.selectSubnets({subnetGroupName: 'public'}),
-      internetFacing: true,
-      securityGroup: albSg
-    });
-    // ポート 443 で受け付ける ALB の Listener
-    const albListenerHttps = demoAlb.addListener('HttpsListener', {
-      port: 443,
-      protocol: elb.ApplicationProtocol.HTTPS,
-      open: true,
-      certificates: [
-          elb.ListenerCertificate.fromArn(
-            // TODO: ACM を用意して SSM にパラメータ登録が事前に必要
-            // *.alb.example.com のようなワイルドカードドメイン名での証明書にしておくことで、1 つの ALB でもホストヘッダーでターゲットグループを EC2/ECS などで分けられっる
-            ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/acmarn/wildcard/albdomain'))
-      ]
-    });
-    albListenerHttps.addTargets('TgEc2Asg', {
+    props.albListenerHttps.addTargets('TgEc2Asg', {
       // targetGroupName: "demoEc2-asg",
       port: 80,
       targets: [ec2Asg],
@@ -96,23 +77,26 @@ export class AlbEc2Asg extends Construct {
         healthyThresholdCount: 2,
         unhealthyThresholdCount: 3
       },
+      conditions: [
+        elb.ListenerCondition.hostHeaders([
+          "ec2-asg.alb." + hostedZoneName
+        ])
+      ],
+      priority: 1
     });
     // Auto Scaling の動的スケーリングポリシーを追加
     ec2Asg.scaleOnRequestCount('100reqPerMinutes', {
       targetRequestsPerMinute: 100
     });
 
-    /* https://ec2-asg.alb.example.com のような独自ドメインで ALB に https アクセスするために Route53 に A レコード作成 */
-    // TODO: Route53 のホストゾーンを作成し、SSM パラメーターストアにゾーン ID とゾーン名を用意しておく
-    const hostedZoneName = ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/domain/hostedZoneName');
-    const hostedAoneId = ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/domain/hostedZoneId');
+    // https://ec2-asg.alb.example.com のような URL で ALB にアクセスするための A レコードを追加
     new r53.ARecord(this, 'AlbEc2Asg', {
       zone: r53.HostedZone.fromHostedZoneAttributes(this, 'HostZone', {
         hostedZoneId: hostedAoneId,
         zoneName: hostedZoneName,
       }),
       recordName: 'ec2-asg.alb.' + hostedZoneName,
-      target: r53.RecordTarget.fromAlias(new r53tartet.LoadBalancerTarget(demoAlb))
+      target: r53.RecordTarget.fromAlias(new r53tartet.LoadBalancerTarget(props.albListenerHttps.loadBalancer))
     });
   }
 }
