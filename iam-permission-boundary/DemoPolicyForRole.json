@@ -1,0 +1,28 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Action": [
+				"ec2:*",
+				"iam:*",
+				"sts:DecodeAuthorizationMessage"
+			],
+			"Resource": "*",
+			"Effect": "Allow"
+		},
+		{
+			"Action": [
+				"iam:CreateServiceLinkedRole"
+			],
+			"Resource": "*",
+			"Effect": "Deny"
+		},
+		{
+			"Action": [
+				"cloudshell:*"
+			],
+			"Resource": "*",
+			"Effect": "Allow"
+		}
+	]
+}

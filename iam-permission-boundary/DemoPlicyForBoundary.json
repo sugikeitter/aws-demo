@@ -1,0 +1,180 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "dynamodb:*",
+                "ec2:CreateTags",
+                "ec2:Describe*",
+                "ec2:RunInstances",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "iam:AddRoleToInstanceProfile",
+                "iam:CreateInstanceProfile",
+                "iam:Get*",
+                "iam:List*",
+                "sts:DecodeAuthorizationMessage"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        },
+        {
+            "Action": [
+                "ec2:RunInstances"
+            ],
+            "Effect": "Deny",
+            "Resource": "arn:aws:ec2:*:134043038670:instance/*",
+            "Condition": {
+                "StringNotLike": {
+                    "ec2:InstanceProfile": [
+                        "arn:aws:iam::134043038670:instance-profile/AmazonSSMRoleForInstancesQuickSetup",
+                        "arn:aws:iam::134043038670:instance-profile/demoBoundaryRole*"
+                    ]
+                }
+            }
+        },
+        {
+            "Action": [
+                "ec2:AssociateIamInstanceProfile",
+                "ec2:ReplaceIamInstanceProfileAssociation"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Condition": {
+                "StringLike": {
+                    "ec2:NewInstanceProfile": [
+                        "arn:aws:iam::134043038670:instance-profile/AmazonSSMRoleForInstancesQuickSetup",
+                        "arn:aws:iam::134043038670:instance-profile/demoBoundaryRole*"
+                    ]
+                }
+            }
+        },
+        {
+            "Condition": {
+                "StringEquals": {
+                    "iam:PassedToService": [
+                        "ec2.amazonaws.com",
+                        "lambda.amazonaws.com"
+                    ]
+                }
+            },
+            "Action": "iam:PassRole",
+            "Resource": [
+                "arn:aws:iam::134043038670:role/AmazonSSMRoleForInstancesQuickSetup",
+                "arn:aws:iam::134043038670:role/demoBoundaryRole*"
+            ],
+            "Effect": "Allow",
+            "Sid": "PassSpecificNameRole"
+        },
+        {
+            "Condition": {
+                "StringEquals": {
+                    "iam:PermissionsBoundary": "arn:aws:iam::134043038670:policy/DemoPlicyForBoundary"
+                }
+            },
+            "Action": [
+                "iam:AttachRolePolicy",
+                "iam:CreateRole"
+            ],
+            "Resource": "arn:aws:iam::134043038670:role/demoBoundaryRole*",
+            "Effect": "Allow",
+            "Sid": "RoleCreationWithPrefixAndBoundary"
+        },
+        {
+            "Action": [
+                "iam:CreatePolicyVersion",
+                "iam:DeletePolicy",
+                "iam:DeletePolicyVersion",
+                "iam:SetDefaultPolicyVersion"
+            ],
+            "Resource": "arn:aws:iam::134043038670:policy/DemoPlicyForBoundary",
+            "Effect": "Deny",
+            "Sid": "DenyPermBoundaryIAMPolicyAlteration"
+        },
+        {
+            "Condition": {
+                "StringEquals": {
+                    "iam:PermissionsBoundary": "arn:aws:iam::134043038670:policy/DemoPlicyForBoundary"
+                }
+            },
+            "Action": [
+                "iam:DeleteRolePermissionsBoundary",
+                "iam:DeleteUserPermissionsBoundary"
+            ],
+            "Resource": [
+                "arn:aws:iam::134043038670:role/*",
+                "arn:aws:iam::134043038670:user/*"
+            ],
+            "Effect": "Deny",
+            "Sid": "DenyRemovalOfPermBoundaryFromAnyUserOrRole"
+        },
+        {
+            "Condition": {
+                "StringNotEquals": {
+                    "iam:PermissionsBoundary": "arn:aws:iam::134043038670:policy/DemoPlicyForBoundary"
+                }
+            },
+            "Action": [
+                "iam:CreateUser",
+                "iam:PutRolePermissionsBoundary",
+                "iam:PutUserPermissionsBoundary"
+            ],
+            "Resource": [
+                "arn:aws:iam::134043038670:role/*",
+                "arn:aws:iam::134043038670:user/*"
+            ],
+            "Effect": "Deny",
+            "Sid": "DenyAccessIfRequiredPermBoundaryIsNotBeingApplied"
+        },
+        {
+            "Action": [
+                "cloudshell:*"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:DescribeAssociation",
+                "ssm:GetDeployablePatchSnapshotForInstance",
+                "ssm:GetDocument",
+                "ssm:DescribeDocument",
+                "ssm:GetManifest",
+                "ssm:GetParameter",
+                "ssm:GetParameters",
+                "ssm:ListAssociations",
+                "ssm:ListInstanceAssociations",
+                "ssm:PutInventory",
+                "ssm:PutComplianceItems",
+                "ssm:PutConfigurePackageResult",
+                "ssm:UpdateAssociationStatus",
+                "ssm:UpdateInstanceAssociationStatus",
+                "ssm:UpdateInstanceInformation"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2messages:AcknowledgeMessage",
+                "ec2messages:DeleteMessage",
+                "ec2messages:FailMessage",
+                "ec2messages:GetEndpoint",
+                "ec2messages:GetMessages",
+                "ec2messages:SendReply"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
