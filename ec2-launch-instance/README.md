@@ -20,6 +20,7 @@ nohup sudo ./httpServer 80 &
 インスタンス起動時に Web アプリを起動させる場合
 
 ```bash
+#!/bin/bash
 sudo -u ec2-user sh -c "curl https://raw.githubusercontent.com/sugikeitter/golang__http-server-on-aws/main/bin/go-http-linux > /home/ec2-user/httpServer"
 sudo -u ec2-user chmod 755 /home/ec2-user/httpServer
 nohup sudo /home/ec2-user/httpServer 80 &
