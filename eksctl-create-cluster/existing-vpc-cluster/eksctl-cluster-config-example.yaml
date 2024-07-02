@@ -5,6 +5,9 @@ kind: ClusterConfig
 metadata:
   name: existing-vpc-cluster
   region: ap-northeast-1
+  # tags:
+  #   karpenter.sh/discovery: ${EKS_CLUSTER_NAME} # TODO
+
 iam:
   withOIDC: true
 addons:
