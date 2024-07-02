@@ -1,0 +1,34 @@
+# We can't use this until Session Manager support ipv6 instance
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: existing-vpc-cluster
+  region: ap-northeast-1
+iam:
+  withOIDC: true
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+vpc:
+  subnets:
+    private:
+      ap-northeast-1a: { id: ${PRIVATE_IPV6_SUBNET_ID_A} }
+      ap-northeast-1c: { id: ${PRIVATE_IPV6_SUBNET_ID_C} }
+      ap-northeast-1d: { id: ${PRIVATE_IPV6_SUBNET_ID_D} }
+managedNodeGroups:
+  - name: default
+    amiFamily: Bottlerocket
+    spot: true
+    instanceTypes:
+    - m5.large
+    - m5a.large
+    - m6a.large
+    - m6i.large
+    - m7a.large
+    - m7i.large
+    desiredCapacity: 2
+    minSize: 0
+    maxSize: 6
+    privateNetworking: true
