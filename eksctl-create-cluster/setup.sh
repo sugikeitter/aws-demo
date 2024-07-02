@@ -15,6 +15,7 @@ sudo dnf install git tree vim bash-completion
 # eksctl.cluster.k8s.io/v1alpha1/cluster-name $CLUSTER_NAME??
 # alpha.eksctl.io/cluster-name $CLUSTER_NAME??
 # created-by xxxx
+# kubernetes.io/role/elb 1 # To use internet-facing ELB by AWS LB Contorller
 # karpenter.sh/discovery $CLUSTER_NAME??
 
 
