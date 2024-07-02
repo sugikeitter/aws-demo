@@ -1,6 +1,23 @@
 # for Amazon Linux 2023
 sudo dnf install git tree vim bash-completion
 
+# TODO Create VPC
+## Failed build model due to unable to resolve at least one subnet (0 match VPC and tags: [kubernetes.io/role/internal-elb])
+# ## Private subnet tags
+# alpha.eksctl.io/cluster-name xxxx
+# alpha.eksctl.io/cluster-oidc-enabled true
+# kubernetes.io/role/internal-elb 1 # To use internal ELB by AWS LB Contorller
+# karpenter.sh/discovery $CLUSTER_NAME??
+# created-by eksctl
+
+# ## Public subnet tags
+# alpha.eksctl.io/cluster-oidc-enabled true
+# eksctl.cluster.k8s.io/v1alpha1/cluster-name $CLUSTER_NAME??
+# alpha.eksctl.io/cluster-name $CLUSTER_NAME??
+# created-by xxxx
+# karpenter.sh/discovery $CLUSTER_NAME??
+
+
 # TODO install tools / kubect, aws-cli, eksctl, helm ...
 
 ## kubectl
@@ -34,8 +51,14 @@ tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
 
 sudo mv /tmp/eksctl /usr/local/bin
 
+## argocd cli
+VERSION=$(curl -L -s https://raw.githubusercontent.com/argoproj/argo-cd/stable/VERSION)
+curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/v$VERSION/argocd-linux-amd64
+sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+rm argocd-linux-amd64
 
-# setup
+
+# Cluster setup
 cat << EOT >> ~/.bashrc.d/kubectl_completion.bash
 
 # alias and auto comp
