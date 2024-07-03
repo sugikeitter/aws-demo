@@ -1,20 +1,12 @@
 # for Amazon Linux 2023
 sudo dnf install git tree vim bash-completion
 
-# TODO Create VPC
-## Failed build model due to unable to resolve at least one subnet (0 match VPC and tags: [kubernetes.io/role/internal-elb])
+# TODO Create VPC/subnet and tag to subnet
 # ## Private subnet tags
-# alpha.eksctl.io/cluster-name xxxx
-# alpha.eksctl.io/cluster-oidc-enabled true
 # kubernetes.io/role/internal-elb 1 # To use internal ELB by AWS LB Contorller
 # karpenter.sh/discovery $CLUSTER_NAME??
-# created-by eksctl
 
 # ## Public subnet tags
-# alpha.eksctl.io/cluster-oidc-enabled true
-# eksctl.cluster.k8s.io/v1alpha1/cluster-name $CLUSTER_NAME??
-# alpha.eksctl.io/cluster-name $CLUSTER_NAME??
-# created-by xxxx
 # kubernetes.io/role/elb 1 # To use internet-facing ELB by AWS LB Contorller
 # karpenter.sh/discovery $CLUSTER_NAME??
 
