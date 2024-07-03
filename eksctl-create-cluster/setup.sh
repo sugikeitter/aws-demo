@@ -52,6 +52,7 @@ rm argocd-linux-amd64
 
 
 # Cluster setup
+mkdir ~/.bashrc.d
 cat << EOT >> ~/.bashrc.d/kubectl_completion.bash
 
 # alias and auto comp
