@@ -75,11 +75,17 @@ EOT
 
 source ~/.bashrc
 
-# Create EKS cluster
 export EKS_CLUSTER_NAME=eks-demo
-curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-config-example.yaml | \
-envsubst | eksctl create cluster -f -
+# If you don't have EKS cluster, create EKS cluster
+# curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-config-example.yaml | envsubst | eksctl create cluster -f -
 
+# If you add Cluster admin
+ROLE_ARN= arn:aws:iam::123456789012:role/xxx
+aws eks create-access-entry --cluster-name defaultvpc-eksctl --principal-arn $ROLE_ARN --type STANDARD
+aws eks associate-access-policy --cluster-name $EKS_CLUSTER_NAME \
+  --principal-arn $ROLE_ARN  \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy
+  --access-scope type=cluster
 
 # create kubeconfig
 aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
