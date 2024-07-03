@@ -2,6 +2,13 @@
 sudo dnf install git tree vim bash-completion
 ## TODO envsubst
 
+
+## TODO Karpentar
+# https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/
+# https://karpenter.sh/v0.37/reference/cloudformation/ (https://github.com/aws/karpenter-provider-aws/blob/main/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml)
+# https://github.com/aws/karpenter-provider-aws/tree/main/charts/karpenter
+
+
 # TODO Create VPC/subnet and tag to subnet
 # ## Private subnet tags
 # kubernetes.io/role/internal-elb 1 # To use internal ELB by AWS LB Contorller
