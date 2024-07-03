@@ -1,5 +1,6 @@
 # for Amazon Linux 2023
-sudo dnf install git tree vim bash-completion envsubst
+sudo dnf install git tree vim bash-completion
+## TODO envsubst
 
 # TODO Create VPC/subnet and tag to subnet
 # ## Private subnet tags
