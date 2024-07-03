@@ -1,5 +1,5 @@
 # for Amazon Linux 2023
-sudo dnf install git tree vim bash-completion
+sudo dnf install git tree vim bash-completion envsubst
 
 # TODO Create VPC/subnet and tag to subnet
 # ## Private subnet tags
@@ -72,6 +72,12 @@ export KUBE_EDITOR=/usr/bin/vim
 EOT
 
 source ~/.bashrc
+
+# Create EKS cluster
+export EKS_CLUSTER_NAME=eks-demo
+curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-config-example.yaml | \
+envsubst | eksctl create cluster -f -
+
 
 # create kubeconfig
 aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
