@@ -1,3 +1,4 @@
+# ref https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
@@ -14,13 +15,45 @@ iam:
     serviceAccountName: karpenter
     roleName: ${EKS_CLUSTER_NAME}-karpenter
     permissionPolicyARNs:
-    - arn:${AWS_PARTITION}:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
-iamIdentityMappings:
-- arn: "arn:aws:iam::134043038670:role/KarpenterNodeRole-${EKS_CLUSTER_NAME}"
+    - arn:aws:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
+    # TODO or ↓ (https://docs.aws.amazon.com/eks/latest/userguide/pod-id-association.html)
+    # cat >karpentar-service-account.yaml <<EOF
+    # apiVersion: v1
+    # kind: ServiceAccount
+    # metadata:
+    #   name: karpenter
+    #   namespace: kube-system
+    # EOF
+    # kubectl apply -f karpentar-service-account.yaml
+    # cat >trust-relationship.json <<EOF
+    # {
+    #     "Version": "2012-10-17",
+    #     "Statement": [
+    #         {
+    #             "Sid": "AllowEksAuthToAssumeRoleForPodIdentity",
+    #             "Effect": "Allow",
+    #             "Principal": {
+    #                 "Service": "pods.eks.amazonaws.com"
+    #             },
+    #             "Action": [
+    #                 "sts:AssumeRole",
+    #                 "sts:TagSession"
+    #             ]
+    #         }
+    #     ]
+    # }
+    # EOF
+    # aws iam create-role --role-name karpentar-role --assume-role-policy-document file://trust-relationship.json --description "karpentar-role"
+    # aws iam attach-role-policy --role-name karpentar-role --policy-arn=arn:aws:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
+    # aws eks create-pod-identity-association --cluster-name ${EKS_CLUSTER_NAME} --role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/karpentar-role --namespace kube-system --service-account karpenter
+
+iamIdentityMappings: # will be added to the aws-auth configmap
+- arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${EKS_CLUSTER_NAME}"
   username: system:node:{{EC2PrivateDNSName}}
   groups:
   - system:bootstrappers
   - system:nodes
+  # TODO or `aws eks create-access-entry --cluster-name ${EKS_CLUSTER_NAME} --principal-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${EKS_CLUSTER_NAME} --kubernetes-groups system:bootstrappers system:nodes --type EC2_LINUX`
 
 addons:
   - name: vpc-cni
