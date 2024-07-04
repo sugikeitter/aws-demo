@@ -17,14 +17,6 @@ iam:
     permissionPolicyARNs:
     - arn:aws:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
     # TODO or ↓ (https://docs.aws.amazon.com/eks/latest/userguide/pod-id-association.html)
-    # cat >karpentar-service-account.yaml <<EOF
-    # apiVersion: v1
-    # kind: ServiceAccount
-    # metadata:
-    #   name: karpenter
-    #   namespace: kube-system
-    # EOF
-    # kubectl apply -f karpentar-service-account.yaml
     # cat >trust-relationship.json <<EOF
     # {
     #     "Version": "2012-10-17",
