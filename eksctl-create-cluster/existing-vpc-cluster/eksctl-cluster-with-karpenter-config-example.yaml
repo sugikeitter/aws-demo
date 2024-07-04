@@ -9,10 +9,24 @@ metadata:
 
 iam:
   withOIDC: true
+  podIdentityAssociations:
+  - namespace: kube-system
+    serviceAccountName: karpenter
+    roleName: ${EKS_CLUSTER_NAME}-karpenter
+    permissionPolicyARNs:
+    - arn:${AWS_PARTITION}:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
+iamIdentityMappings:
+- arn: "arn:aws:iam::134043038670:role/KarpenterNodeRole-${EKS_CLUSTER_NAME}"
+  username: system:node:{{EC2PrivateDNSName}}
+  groups:
+  - system:bootstrappers
+  - system:nodes
+
 addons:
   - name: vpc-cni
   - name: coredns
   - name: kube-proxy
+  - name: eks-pod-identity-agent # not default addon
 vpc:
   subnets:
     private:
