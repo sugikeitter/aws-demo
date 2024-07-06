@@ -2,27 +2,6 @@
 sudo dnf install git tree vim bash-completion
 ## TODO envsubst
 
-
-## TODO prepare Karpentar
-# https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/
-# 
-# https://karpenter.sh/v0.37/reference/cloudformation/ (https://github.com/aws/karpenter-provider-aws/blob/main/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml)
-# https://github.com/aws/karpenter-provider-aws/tree/main/charts/karpenter
-# or ↓
-# 
-# 
-
-
-# TODO Create VPC/subnet and tag to subnet
-# ## Private subnet tags
-# kubernetes.io/role/internal-elb 1 # To use internal ELB by AWS LB Contorller
-# karpenter.sh/discovery $CLUSTER_NAME??
-
-# ## Public subnet tags
-# kubernetes.io/role/elb 1 # To use internet-facing ELB by AWS LB Contorller
-# karpenter.sh/discovery $CLUSTER_NAME??
-
-
 # TODO install tools / kubect, aws-cli, eksctl, helm ...
 
 ## kubectl
@@ -63,8 +42,57 @@ sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
 
-# Cluster setup
+# prepare Karpenter
+## Change settings
+export KARPENTER_VERSION="0.37.0"
+export EKS_CLUSTER_NAME=xxxx # TODO
+export TEMPOUT="$(mktemp)"
+
+## Prepare resources used by Karpenter (https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/)
+curl -fsSL https://raw.githubusercontent.com/aws/karpenter-provider-aws/v"${KARPENTER_VERSION}"/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml  > "${TEMPOUT}"
+sed -i "s/QueueName: \!Sub \"/QueueName: \!Sub \"karpenter-interruption-/" "${TEMPOUT}"
+aws cloudformation deploy \
+  --stack-name "Karpenter-${EKS_CLUSTER_NAME}" \
+  --template-file "${TEMPOUT}" \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides "ClusterName=${EKS_CLUSTER_NAME}"
+
+aws iam create-service-linked-role --aws-service-name spot.amazonaws.com || true
+### If the role has already been successfully created, you will see:
+### An error occurred (InvalidInput) when calling the CreateServiceLinkedRole operation: Service role name AWSServiceRoleForEC2Spot has been taken in this account, please try a different suffix.
+
+# Create EKS Cluster with Karpenter settings
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+export PRIVATE_SUBNET_DEF_1="ap-northeast-1a: { id: subnet-xxxxxx }" # TODO
+export PRIVATE_SUBNET_DEF_2="ap-northeast-1c: { id: subnet-xxxxxx }" # TODO
+export PRIVATE_SUBNET_DEF_3="ap-northeast-1d: { id: subnet-xxxxxx }" # TODO
+## eksctl create cluster
+curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-with-karpenter-config-example.yaml | envsubst | eksctl create cluster -f -
+
+# If you add Cluster admin
+ROLE_ARN= arn:aws:iam::${AWS_ACCOUNT_ID}:role/xxx
+aws eks create-access-entry --cluster-name defaultvpc-eksctl --principal-arn $ROLE_ARN --type STANDARD
+aws eks associate-access-policy --cluster-name $EKS_CLUSTER_NAME \
+  --principal-arn $ROLE_ARN  \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy
+  --access-scope type=cluster
+
+# create kubeconfig
+aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+
+# TODO Create VPC/subnet and tag to subnet
+## Private subnet tags
+# kubernetes.io/role/internal-elb 1 # To use internal ELB by AWS LB Contorller
+# karpenter.sh/discovery $EKS_CLUSTER_NAME # To use Karpentar
+
+## Public subnet tags
+# kubernetes.io/role/elb 1 # To use internet-facing ELB by AWS LB Contorller
+# karpenter.sh/discovery $EKS_CLUSTER_NAME # To use Karpentar
+
+
+# Client setup to use EKS Cluster
 mkdir ~/.bashrc.d
+## k8s
 cat << EOT >> ~/.bashrc.d/kubectl_completion.bash
 
 # alias and auto comp
@@ -86,32 +114,17 @@ EOT
 
 source ~/.bashrc
 
-export EKS_CLUSTER_NAME=eks-demo
-# If you don't have EKS cluster, create EKS cluster
-# curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-config-example.yaml | envsubst | eksctl create cluster -f -
-
-# If you add Cluster admin
-ROLE_ARN= arn:aws:iam::123456789012:role/xxx
-aws eks create-access-entry --cluster-name defaultvpc-eksctl --principal-arn $ROLE_ARN --type STANDARD
-aws eks associate-access-policy --cluster-name $EKS_CLUSTER_NAME \
-  --principal-arn $ROLE_ARN  \
-  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy
-  --access-scope type=cluster
-
-# create kubeconfig
-aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-
 
 ################
 
 # Add AWS Load Balancer Contoroller (https://kubernetes-sigs.github.io/aws-load-balancer-controller)
-
 curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.8.1/docs/install/iam_policy.json
 
 aws iam create-policy \
     --policy-name AWSLoadBalancerControllerIAMPolicy \
     --policy-document file://iam-policy.json
 
+## TODO use pod identity
 eksctl create iamserviceaccount \
   --cluster=$EKS_CLUSTER_NAME \
   --namespace=kube-system \
@@ -163,14 +176,14 @@ kubectl create namespace argocd
 kubectl apply -n argocd -k ./argocd-install-kustomize
 
 
-# Setup Karpentar
+# Setup Karpenter
 
-## TODO: Change Karpentar settings
+## TODO: Change Karpenter settings
 EKS_CLUSTER_NAME=xxxx
-KARPENTER_QUEUE_NAME=xxxx
+KARPENTER_QUEUE_NAME=karpenter-interruption-${EKS_CLUSTER_NAME} #
 KARPENTER_VERSION=0.37.0
 KARPENTER_NODE_AMI_FAMILY=Bottlerocket
-KARPENTER_NODE_ROLE=KarpenterNodeRole-xxxx
+KARPENTER_NODE_ROLE=KarpenterNodeRole-${EKS_CLUSTER_NAME}
 KARPENTER_NODE_SG_NAME=eks-cluster-sg-xxx # set existing sg
 
 ## Logout of helm registry to perform an unauthenticated pull against the public ECR
@@ -185,6 +198,7 @@ helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter --vers
   --wait
 
 ## Create NodePool and EC2NodeClass
+export K8S_VERSION="1.30" # TODO
 cat <<EOF | kubectl apply -f -
 apiVersion: karpenter.sh/v1beta1
 kind: NodePool

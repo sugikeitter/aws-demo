@@ -1,3 +1,6 @@
+# T
+
+
 # ref https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
@@ -12,7 +15,8 @@ accessConfig:
   accessEntries:
     - principalARN: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${EKS_CLUSTER_NAME}"
       type: EC2_LINUX # Add system:nodes in kubernetesGroups by default
-      # ↑ Is system:bootstrappers nessesary?
+      # TODO or `aws eks create-access-entry --cluster-name ${EKS_CLUSTER_NAME} --principal-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${EKS_CLUSTER_NAME} --type EC2_LINUX` # Add system:nodes in kubernetesGroups by default
+
 iam:
   withOIDC: true
   podIdentityAssociations:
@@ -22,6 +26,7 @@ iam:
     permissionPolicyARNs:
     - arn:aws:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
     # TODO or ↓ (https://docs.aws.amazon.com/eks/latest/userguide/pod-id-association.html)
+    # export KARPENTER_NAMESPACE="kube-system" #
     # cat > trust-relationship.json <<EOF
     # {
     #     "Version": "2012-10-17",
@@ -40,18 +45,23 @@ iam:
     #     ]
     # }
     # EOF
-    # aws iam create-role --role-name karpentar-role --assume-role-policy-document file://trust-relationship.json --description "karpentar-role"
-    # aws iam attach-role-policy --role-name karpentar-role --policy-arn=arn:aws:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
-    # aws eks create-pod-identity-association --cluster-name ${EKS_CLUSTER_NAME} --role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/karpentar-role --namespace kube-system --service-account karpenter
+    #
+    # aws iam create-role --role-name karpenter-role --assume-role-policy-document file://trust-relationship.json --description "karpenter-role"
+    # aws iam attach-role-policy --role-name karpenter-role --policy-arn=arn:aws:iam::${AWS_ACCOUNT_ID}:policy/KarpenterControllerPolicy-${EKS_CLUSTER_NAME}
+    # aws eks create-pod-identity-association --cluster-name defaultvpc-eksctl \
+    #   --role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/karpenter-role \
+    #   --namespace ${KARPENTER_NAMESPACE} \
+    #   --service-account karpenter
 
+
+#### (Legacy settings) #####
 # iamIdentityMappings: # will be added to the aws-auth configmap
 # - arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${EKS_CLUSTER_NAME}"
 #   username: system:node:{{EC2PrivateDNSName}}
 #   groups:
 #   - system:bootstrappers
 #   - system:nodes
-  # TODO or `aws eks create-access-entry --cluster-name ${EKS_CLUSTER_NAME} --principal-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/KarpenterNodeRole-${EKS_CLUSTER_NAME} --type EC2_LINUX` # Add system:nodes in kubernetesGroups by default
-  # ↑ Is system:bootstrappers nessesary?
+
 addons:
   - name: vpc-cni
   - name: coredns
@@ -60,9 +70,9 @@ addons:
 vpc:
   subnets:
     private:
-      ap-northeast-1a: { id: ${PRIVATE_IPV6_SUBNET_ID_A} }
-      ap-northeast-1c: { id: ${PRIVATE_IPV6_SUBNET_ID_C} }
-      ap-northeast-1d: { id: ${PRIVATE_IPV6_SUBNET_ID_D} }
+      ${PRIVATE_SUBNET_DEF_1}
+      ${PRIVATE_SUBNET_DEF_2}
+      ${PRIVATE_SUBNET_DEF_3}
 managedNodeGroups:
   - name: default
     amiFamily: Bottlerocket
