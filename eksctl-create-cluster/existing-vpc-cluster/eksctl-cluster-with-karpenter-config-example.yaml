@@ -1,6 +1,3 @@
-# T
-
-
 # ref https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
