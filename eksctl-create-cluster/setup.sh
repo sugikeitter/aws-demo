@@ -3,10 +3,14 @@ sudo dnf install git tree vim bash-completion
 ## TODO envsubst
 
 
-## TODO Karpentar
+## TODO prepare Karpentar
 # https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/
+# 
 # https://karpenter.sh/v0.37/reference/cloudformation/ (https://github.com/aws/karpenter-provider-aws/blob/main/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml)
 # https://github.com/aws/karpenter-provider-aws/tree/main/charts/karpenter
+# or ↓
+# 
+# 
 
 
 # TODO Create VPC/subnet and tag to subnet
@@ -157,3 +161,83 @@ EOF
 
 kubectl create namespace argocd
 kubectl apply -n argocd -k ./argocd-install-kustomize
+
+
+# Setup Karpentar
+
+## TODO: Change Karpentar settings
+EKS_CLUSTER_NAME=xxxx
+KARPENTER_QUEUE_NAME=xxxx
+KARPENTER_VERSION=0.37.0
+KARPENTER_NODE_AMI_FAMILY=Bottlerocket
+KARPENTER_NODE_ROLE=KarpenterNodeRole-xxxx
+KARPENTER_NODE_SG_NAME=eks-cluster-sg-xxx # set existing sg
+
+## Logout of helm registry to perform an unauthenticated pull against the public ECR
+helm registry logout public.ecr.aws
+helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter --version "${KARPENTER_VERSION}" --namespace "kube-system" --create-namespace \
+  --set "settings.clusterName=defaultvpc-eksctl" \
+  --set "settings.interruptionQueue=${KARPENTER_QUEUE_NAME}" \
+  --set controller.resources.requests.cpu=1 \
+  --set controller.resources.requests.memory=1Gi \
+  --set controller.resources.limits.cpu=1 \
+  --set controller.resources.limits.memory=1Gi \
+  --wait
+
+## Create NodePool and EC2NodeClass
+cat <<EOF | kubectl apply -f -
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: default
+spec:
+  template:
+    spec:
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64", "arm64"]
+        - key: kubernetes.io/os
+          operator: In
+          values: ["linux"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["c", "m", "r"]
+        - key: karpenter.k8s.aws/instance-size
+          operator: In
+          values: ["large"]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: ["5"]
+      nodeClassRef:
+        apiVersion: karpenter.k8s.aws/v1beta1
+        kind: EC2NodeClass
+        name: default
+  limits:
+    cpu: 1000
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    expireAfter: 720h # 30 * 24h = 720h
+---
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: ${KARPENTER_NODE_AMI_FAMILY}
+  role: ${KARPENTER_NODE_ROLE}
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
+  securityGroupSelectorTerms:
+    - tags:
+        Name: ${KARPENTER_NODE_SG_NAME}
+#   amiSelectorTerms:
+#     - id: "${ARM_AMI_ID}"
+#     - id: "${AMD_AMI_ID}"
+# #   - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
+# #   - name: "amazon-eks-node-${K8S_VERSION}-*" # <- automatically upgrade when a new AL2 EKS Optimized AMI is released. This is unsafe for production workloads. Validate AMIs in lower environments before deploying them to production.
+EOF
