@@ -133,14 +133,20 @@ eksctl create iamserviceaccount \
   --attach-policy-arn=arn:aws:iam::`aws sts get-caller-identity --output text --query "Account"`:policy/AWSLoadBalancerControllerIAMPolicy \
   --approve
 
-helm repo add eks https://aws.github.io/eks-charts
 
+LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION=1.8.1 # TODO Change version
+helm repo add eks https://aws.github.io/eks-charts
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   -n kube-system \
+  -version ${LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION} \
   --set clusterName=$EKS_CLUSTER_NAME \
   --set serviceAccount.create=false \
   --set serviceAccount.name=aws-load-balancer-controller 
-##### After setup Argo CD #####
+
+# Set up Argo CD
+## Refer https://github.com/sugikeitter/argocd-example/blob/main/setup.sh
+
+# After setup Argo CD, manage aws-load-balancer-controller in Argo CD
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -151,7 +157,7 @@ spec:
   project: default
   source:
     repoURL: 'https://aws.github.io/eks-charts'
-    targetRevision: 1.8.1 # TODO Change version
+    targetRevision: ${LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION} 
     chart: aws-load-balancer-controller
     helm:
       parameters:
@@ -169,42 +175,6 @@ spec:
       prune: true
       selfHeal: true
 EOF
-
-
-###############
-# setup Argo CD with NLB
-mkdir argocd-install-kustomize
-curl https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml > ./argocd-install-kustomize/argocd-install.yaml
-
-cat << EOF > ./argocd-install-kustomize/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-metadata:
-  name: argocd-server-patch
-
-resources:
-- argocd-install.yaml
-
-patches:
-- path: svc-argocd-server-patch.yaml
-EOF
-
-cat << EOF > ./argocd-install-kustomize/svc-argocd-server-patch.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: argocd-server
-  annotations: # https://docs.aws.amazon.com/eks/latest/userguide/network-load-balancing.html#network-load-balancer
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
-    service.beta.kubernetes.io/aws-load-balancer-type: external
-spec:
-  type: LoadBalancer
-EOF
-
-kubectl create namespace argocd
-kubectl apply -n argocd -k ./argocd-install-kustomize
-
 
 # Setup Karpenter
 
