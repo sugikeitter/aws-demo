@@ -134,7 +134,7 @@ eksctl create iamserviceaccount \
   --approve
 
 
-LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION=1.8.1 # TODO Change version
+export LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION=1.8.1 # TODO Change version
 helm repo add eks https://aws.github.io/eks-charts
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   -n kube-system \
