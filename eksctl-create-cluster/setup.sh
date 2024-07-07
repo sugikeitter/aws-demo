@@ -70,7 +70,7 @@ export PRIVATE_SUBNET_DEF_3="ap-northeast-1d: { id: subnet-xxxxxx }" # TODO
 curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-with-karpenter-config-example.yaml | envsubst | eksctl create cluster -f -
 
 # If you add Cluster admin
-ROLE_ARN= arn:aws:iam::${AWS_ACCOUNT_ID}:role/xxx
+export ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/xxx" # TODO
 aws eks create-access-entry --cluster-name defaultvpc-eksctl --principal-arn $ROLE_ARN --type STANDARD
 aws eks associate-access-policy --cluster-name $EKS_CLUSTER_NAME \
   --principal-arn $ROLE_ARN  \
