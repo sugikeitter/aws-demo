@@ -178,24 +178,59 @@ kubectl apply -n argocd -k ./argocd-install-kustomize
 
 # Setup Karpenter
 
-## TODO: Change Karpenter settings
-EKS_CLUSTER_NAME=xxxx
+## Change Karpenter settings
+EKS_CLUSTER_NAME=xxxx # TODO
 KARPENTER_QUEUE_NAME=karpenter-interruption-${EKS_CLUSTER_NAME} #
 KARPENTER_VERSION=0.37.0
 KARPENTER_NODE_AMI_FAMILY=Bottlerocket
 KARPENTER_NODE_ROLE=KarpenterNodeRole-${EKS_CLUSTER_NAME}
-KARPENTER_NODE_SG_NAME=eks-cluster-sg-xxx # set existing sg
+KARPENTER_NODE_SG_NAME=eks-cluster-sg-xxx # TODO set existing sg
 
 ## Logout of helm registry to perform an unauthenticated pull against the public ECR
 helm registry logout public.ecr.aws
 helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter --version "${KARPENTER_VERSION}" --namespace "kube-system" --create-namespace \
-  --set "settings.clusterName=defaultvpc-eksctl" \
+  --set "settings.clusterName=${EKS_CLUSTER_NAME}" \
   --set "settings.interruptionQueue=${KARPENTER_QUEUE_NAME}" \
   --set controller.resources.requests.cpu=1 \
   --set controller.resources.requests.memory=1Gi \
   --set controller.resources.limits.cpu=1 \
   --set controller.resources.limits.memory=1Gi \
   --wait
+#### or ArgoCD resource####
+cat <<EOF | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karpenter
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'public.ecr.aws/karpenter'
+    targetRevision: ${KARPENTER_VERSION} # TODO Change version
+    chart: karpenter
+    helm:
+      parameters:
+      - name: "settings.clusterName"
+        value: ${EKS_CLUSTER_NAME}
+      - name: "settings.interruptionQueue"
+        value: ${KARPENTER_QUEUE_NAME}
+      - name: "controller.resources.requests.cpu"
+        value: "1"
+      - name: "controller.resources.requests.memory"
+        value: 1Gi
+      - name: "controller.resources.limits.cpu"
+        value: "1"
+      - name: "controller.resources.limits.memory"
+        value: 1Gi
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
 
 ## Create NodePool and EC2NodeClass
 export K8S_VERSION="1.30" # TODO
