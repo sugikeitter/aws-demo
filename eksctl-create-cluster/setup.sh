@@ -140,6 +140,36 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   --set clusterName=$EKS_CLUSTER_NAME \
   --set serviceAccount.create=false \
   --set serviceAccount.name=aws-load-balancer-controller 
+##### After setup Argo CD #####
+cat <<EOF | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://aws.github.io/eks-charts'
+    targetRevision: 1.8.1 # TODO Change version
+    chart: aws-load-balancer-controller
+    helm:
+      parameters:
+      - name: "clusterName"
+        value: ${EKS_CLUSTER_NAME}
+      - name: "serviceAccount.create"
+        value: "false"
+      - name: "serviceAccount.name"
+        value: aws-load-balancer-controller
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
+
 
 ###############
 # setup Argo CD with NLB
