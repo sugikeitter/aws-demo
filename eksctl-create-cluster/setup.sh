@@ -238,6 +238,7 @@ EOF
 
 ## Create NodePool and EC2NodeClass
 export K8S_VERSION="1.30" # TODO
+# TODO manage by Argo CD
 cat <<EOF | kubectl apply -f -
 apiVersion: karpenter.sh/v1beta1
 kind: NodePool
