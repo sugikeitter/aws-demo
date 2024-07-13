@@ -319,6 +319,10 @@ spec:
 EOF
 
 # Setup CloudWatch Container Insights EKS add-on
+aws iam attach-role-policy \
+--role-name ${NODE_ROLE} \ # Managed node group & karpentar node
+--policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+
 kubectl create ns amazon-cloudwatch
 
 eksctl create podidentityassociation \
