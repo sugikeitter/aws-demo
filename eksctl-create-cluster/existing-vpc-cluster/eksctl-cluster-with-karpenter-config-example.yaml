@@ -75,13 +75,19 @@ managedNodeGroups:
     amiFamily: Bottlerocket
     spot: true
     instanceTypes:
-    - m5.large
-    - m5a.large
-    - m6a.large
-    - m6i.large
-    - m7a.large
-    - m7i.large
+    - m5.xlarge
+    - m5a.xlarge
+    - m6a.xlarge
+    - m6i.xlarge
+    - m7a.xlarge
+    - m7i.xlarge
+    - c5.xlarge
+    - c5a.xlarge
+    - c6i.xlarge
+    - c6a.xlarge
+    - c7i.xlarge
+    - c7a.xlarge
     desiredCapacity: 2
-    minSize: 0
-    maxSize: 6
+    minSize: 1
+    maxSize: 2
     privateNetworking: true
