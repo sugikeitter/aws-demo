@@ -88,6 +88,6 @@ managedNodeGroups:
     - c7i.xlarge
     - c7a.xlarge
     desiredCapacity: 2
-    minSize: 1
-    maxSize: 2
+    minSize: 2 # Karpenter needs 2 node not created by karpenter 
+    maxSize: 4
     privateNetworking: true
