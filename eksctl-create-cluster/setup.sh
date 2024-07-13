@@ -51,6 +51,7 @@ export TEMPOUT="$(mktemp)"
 ## Prepare resources used by Karpenter (https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/)
 curl -fsSL https://raw.githubusercontent.com/aws/karpenter-provider-aws/v"${KARPENTER_VERSION}"/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml  > "${TEMPOUT}"
 sed -i "s/QueueName: \!Sub \"/QueueName: \!Sub \"karpenter-interruption-/" "${TEMPOUT}"
+## Create some AWS resources like IAM Roles, SQS queues
 aws cloudformation deploy \
   --stack-name "Karpenter-${EKS_CLUSTER_NAME}" \
   --template-file "${TEMPOUT}" \
@@ -186,17 +187,7 @@ KARPENTER_NODE_AMI_FAMILY=Bottlerocket
 KARPENTER_NODE_ROLE=KarpenterNodeRole-${EKS_CLUSTER_NAME}
 KARPENTER_NODE_SG_NAME=eks-cluster-sg-xxx # TODO set existing sg
 
-## Logout of helm registry to perform an unauthenticated pull against the public ECR
-helm registry logout public.ecr.aws
-helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter --version "${KARPENTER_VERSION}" --namespace "kube-system" --create-namespace \
-  --set "settings.clusterName=${EKS_CLUSTER_NAME}" \
-  --set "settings.interruptionQueue=${KARPENTER_QUEUE_NAME}" \
-  --set controller.resources.requests.cpu=1 \
-  --set controller.resources.requests.memory=1Gi \
-  --set controller.resources.limits.cpu=1 \
-  --set controller.resources.limits.memory=1Gi \
-  --wait
-#### or ArgoCD resource####
+#### Create ArgoCD resource####
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -232,13 +223,27 @@ spec:
       selfHeal: true
 EOF
 
+# # Or using Helm manually
+# ## Logout of helm registry to perform an unauthenticated pull against the public ECR
+# helm registry logout public.ecr.aws
+# helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter --version "${KARPENTER_VERSION}" --namespace "kube-system" --create-namespace \
+#   --set "settings.clusterName=${EKS_CLUSTER_NAME}" \
+#   --set "settings.interruptionQueue=${KARPENTER_QUEUE_NAME}" \
+#   --set controller.resources.requests.cpu=1 \
+#   --set controller.resources.requests.memory=1Gi \
+#   --set controller.resources.limits.cpu=1 \
+#   --set controller.resources.limits.memory=1Gi \
+#   --wait
+
+
 ## Create NodePool and EC2NodeClass
 export K8S_VERSION="1.30" # TODO
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply -n karpentar -f -
 apiVersion: karpenter.sh/v1beta1
 kind: NodePool
 metadata:
   name: default
+  namespace karpentar
 spec:
   template:
     spec:
@@ -257,7 +262,7 @@ spec:
           values: ["c", "m", "r"]
         - key: karpenter.k8s.aws/instance-size
           operator: In
-          values: ["large"]
+          values: ["xlarge"]
         - key: karpenter.k8s.aws/instance-generation
           operator: Gt
           values: ["5"]
@@ -275,6 +280,7 @@ apiVersion: karpenter.k8s.aws/v1beta1
 kind: EC2NodeClass
 metadata:
   name: default
+  namespace karpentar
 spec:
   amiFamily: ${KARPENTER_NODE_AMI_FAMILY}
   role: ${KARPENTER_NODE_ROLE}
@@ -312,3 +318,17 @@ spec:
       prune: true
       selfHeal: true
 EOF
+
+# Setup CloudWatch Container Insights EKS add-on
+kubectl create ns amazon-cloudwatch
+
+eksctl create podidentityassociation \
+    --cluster ${EKS_CLUSTER_NAME} \
+    --namespace amazon-cloudwatch \
+    --service-account-name cloudwatch-agent \
+    --permission-policy-arns="arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" \
+    --role-name EKSContainerInsightsSARole 
+#    --permission-policy-arns="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/CloudWatchAgentServerPolicy, arn:aws:iam::${AWS_ACCOUNT_ID}:policy/xxxx" \
+#    --well-known-policies="autoScaler,externalDNS" \
+
+aws eks create-addon --cluster-name ${EKS_CLUSTER_NAME} --addon-name amazon-cloudwatch-observability
