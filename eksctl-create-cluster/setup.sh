@@ -238,12 +238,11 @@ EOF
 
 ## Create NodePool and EC2NodeClass
 export K8S_VERSION="1.30" # TODO
-cat <<EOF | kubectl apply -n karpentar -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: karpenter.sh/v1beta1
 kind: NodePool
 metadata:
   name: default
-  namespace karpentar
 spec:
   template:
     spec:
@@ -280,7 +279,6 @@ apiVersion: karpenter.k8s.aws/v1beta1
 kind: EC2NodeClass
 metadata:
   name: default
-  namespace karpentar
 spec:
   amiFamily: ${KARPENTER_NODE_AMI_FAMILY}
   role: ${KARPENTER_NODE_ROLE}
