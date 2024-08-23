@@ -94,7 +94,7 @@ managedNodeGroups:
     maxSize: 2
     privateNetworking: true
     iam:
-      attachPolicyARNs: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${KARPENTER_NODE_ROLE}
+      instanceRoleARN: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${KARPENTER_NODE_ROLE}
   - name: Bottlerocket-spot
     amiFamily: Bottlerocket
     spot: true
@@ -116,4 +116,4 @@ managedNodeGroups:
     maxSize: 1
     privateNetworking: true
     iam:
-      attachPolicyARNs: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${KARPENTER_NODE_ROLE}
+      instanceRoleARN: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${KARPENTER_NODE_ROLE}
