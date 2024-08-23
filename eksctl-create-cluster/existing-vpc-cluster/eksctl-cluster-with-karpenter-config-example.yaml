@@ -73,7 +73,7 @@ vpc:
       ${PRIVATE_SUBNET_DEF_2}
       ${PRIVATE_SUBNET_DEF_3}
 managedNodeGroups:
-  - name: AmazonLinux2023-spot
+  - name: AmazonLinux2023-spot-with-karpenter-role
     amiFamily: AmazonLinux2023
     spot: true
     instanceTypes:
@@ -95,7 +95,7 @@ managedNodeGroups:
     privateNetworking: true
     iam:
       instanceRoleARN: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${KARPENTER_NODE_ROLE}
-  - name: Bottlerocket-spot
+  - name: Bottlerocket-spot-with-karpenter-role
     amiFamily: Bottlerocket
     spot: true
     instanceTypes:
