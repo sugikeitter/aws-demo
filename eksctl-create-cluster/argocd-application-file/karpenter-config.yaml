@@ -40,14 +40,14 @@ kind: EC2NodeClass
 metadata:
   name: default
 spec:
-  amiFamily: ${KARPENTER_NODE_AMI_FAMILY}
-  role: ${KARPENTER_NODE_ROLE}
+  amiFamily: Bottlerocket
+  role: KarpenterNodeRole-demo-eksctl-defaultvpc
   subnetSelectorTerms:
     - tags:
-        karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
+        karpenter.sh/discovery: demo-eksctl-defaultvpc
   securityGroupSelectorTerms:
     - tags:
-        karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
+        karpenter.sh/discovery: demo-eksctl-defaultvpc
   amiSelectorTerms:
   - alias: bottlerocket@v1.21.0
 #     - id: "${ARM_AMI_ID}"
