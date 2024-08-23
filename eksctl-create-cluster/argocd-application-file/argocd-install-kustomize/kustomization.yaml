@@ -1,0 +1,12 @@
+# https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#manage-argo-cd-using-argo-cd
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: argocd-server-patch
+
+resources:
+- github.com/argoproj/argo-cd//manifests/cluster-install?ref=v2.11.4 # TODO Change the version you use
+#- https://github.com/argoproj/argo-cd//manifests/base?timeout=120&ref=v2.11.4 # Probably the same as above 
+
+patches:
+- path: svc-argocd-server-patch.yaml
