@@ -3,7 +3,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: existing-vpc-cluster
+  name: demo-existing-vpc
   region: ap-northeast-1
   tags:
     karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
@@ -71,8 +71,8 @@ vpc:
       ${PRIVATE_SUBNET_DEF_2}
       ${PRIVATE_SUBNET_DEF_3}
 managedNodeGroups:
-  - name: default
-    amiFamily: Bottlerocket
+  - name: AmazonLinux2023-spot
+    amiFamily: AmazonLinux2023
     spot: true
     instanceTypes:
     - m5.xlarge
@@ -89,5 +89,25 @@ managedNodeGroups:
     - c7a.xlarge
     desiredCapacity: 2
     minSize: 2 # Karpenter needs 2 node not created by karpenter 
-    maxSize: 4
+    maxSize: 2
+    privateNetworking: true
+  - name: Bottlerocket-spot
+    amiFamily: Bottlerocket
+    spot: true
+    instanceTypes:
+    - m5.xlarge
+    - m5a.xlarge
+    - m6a.xlarge
+    - m6i.xlarge
+    - m7a.xlarge
+    - m7i.xlarge
+    - c5.xlarge
+    - c5a.xlarge
+    - c6i.xlarge
+    - c6a.xlarge
+    - c7i.xlarge
+    - c7a.xlarge
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
     privateNetworking: true
