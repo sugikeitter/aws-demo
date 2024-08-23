@@ -72,7 +72,7 @@ curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-cr
 
 # If you add Cluster admin
 export ROLE_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:role/xxx" # TODO
-aws eks create-access-entry --cluster-name defaultvpc-eksctl --principal-arn $ROLE_ARN --type STANDARD
+aws eks create-access-entry --cluster-name ${EKS_CLUSTER_NAME} --principal-arn $ROLE_ARN --type STANDARD
 aws eks associate-access-policy --cluster-name $EKS_CLUSTER_NAME \
   --principal-arn $ROLE_ARN  \
   --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy
@@ -82,11 +82,11 @@ aws eks associate-access-policy --cluster-name $EKS_CLUSTER_NAME \
 aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
 
 # TODO Create VPC/subnet and tag to subnet
-## Private subnet tags
+### Private subnet tags ###
 # kubernetes.io/role/internal-elb 1 # To use internal ELB by AWS LB Contorller
 # karpenter.sh/discovery $EKS_CLUSTER_NAME # To use Karpentar
 
-## Public subnet tags
+### Public subnet tags ###
 # kubernetes.io/role/elb 1 # To use internet-facing ELB by AWS LB Contorller
 # karpenter.sh/discovery $EKS_CLUSTER_NAME # To use Karpentar
 
