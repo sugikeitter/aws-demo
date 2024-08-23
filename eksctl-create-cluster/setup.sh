@@ -145,7 +145,11 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   --set serviceAccount.name=aws-load-balancer-controller 
 
 # Set up Argo CD
-## Refer https://github.com/sugikeitter/argocd-example/blob/main/setup.sh
+### Use port-forward
+kubectl port-forward svc/argocd-server -n argocd 8888:443
+
+### Use LoadBalancer (and Verified Access)
+# Refer https://github.com/sugikeitter/argocd-example/blob/main/setup.sh
 
 # After setup Argo CD, manage aws-load-balancer-controller in Argo CD
 cat <<EOF | kubectl apply -f -
