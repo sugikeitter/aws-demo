@@ -93,6 +93,8 @@ managedNodeGroups:
     minSize: 2 # Karpenter needs 2 node not created by karpenter 
     maxSize: 2
     privateNetworking: true
+    iam:
+      instanceRoleName: ${KARPENTER_NODE_ROLE}
   - name: Bottlerocket-spot
     amiFamily: Bottlerocket
     spot: true
@@ -113,3 +115,5 @@ managedNodeGroups:
     minSize: 1
     maxSize: 1
     privateNetworking: true
+    iam:
+      instanceRoleName: ${KARPENTER_NODE_ROLE}
