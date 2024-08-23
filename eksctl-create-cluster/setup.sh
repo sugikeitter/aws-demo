@@ -295,8 +295,7 @@ spec:
   - alias: bottlerocket@v1.21.0
 #     - id: "${ARM_AMI_ID}"
 #     - id: "${AMD_AMI_ID}"
-# #   - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
-# #   - name: "amazon-eks-node-${K8S_VERSION}-*" # <- automatically upgrade when a new AL2 EKS Optimized AMI is released. This is unsafe for production workloads. Validate AMIs in lower environments before deploying them to production.
+#     - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
 EOF
 
 # Setup metric server by argocd
