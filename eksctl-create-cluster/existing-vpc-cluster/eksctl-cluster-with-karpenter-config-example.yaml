@@ -64,6 +64,8 @@ addons:
   - name: coredns
   - name: kube-proxy
   - name: eks-pod-identity-agent # not default addon
+addonsConfig:
+  autoApplyPodIdentityAssociations: true
 vpc:
   subnets:
     private:
