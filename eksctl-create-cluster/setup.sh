@@ -44,11 +44,11 @@ rm argocd-linux-amd64
 
 # prepare Karpenter
 ## Change settings
-export KARPENTER_VERSION="0.37.0"
-export EKS_CLUSTER_NAME=xxxx # TODO
+export KARPENTER_VERSION="1.0.1"
+export EKS_CLUSTER_NAME=xxxx # TODO your eks cluster name
 export TEMPOUT="$(mktemp)"
 
-## Prepare resources used by Karpenter (https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/)
+## Prepare resources used by Karpenter (https://karpenter.sh/v1.0/getting-started/getting-started-with-karpenter/)
 curl -fsSL https://raw.githubusercontent.com/aws/karpenter-provider-aws/v"${KARPENTER_VERSION}"/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml  > "${TEMPOUT}"
 sed -i "s/QueueName: \!Sub \"/QueueName: \!Sub \"karpenter-interruption-/" "${TEMPOUT}"
 ## Create some AWS resources like IAM Roles, SQS queues
@@ -64,7 +64,7 @@ aws iam create-service-linked-role --aws-service-name spot.amazonaws.com || true
 
 # Create EKS Cluster with Karpenter settings
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-export PRIVATE_SUBNET_DEF_1="ap-northeast-1a: { id: subnet-xxxxxx }" # TODO
+export PRIVATE_SUBNET_DEF_1="ap-northeast-1a: { id: subnet-xxxxxx }" # TODO your region az and subnet ids
 export PRIVATE_SUBNET_DEF_2="ap-northeast-1c: { id: subnet-xxxxxx }" # TODO
 export PRIVATE_SUBNET_DEF_3="ap-northeast-1d: { id: subnet-xxxxxx }" # TODO
 ## eksctl create cluster
@@ -180,12 +180,9 @@ EOF
 # Setup Karpenter
 
 ## Change Karpenter settings
-EKS_CLUSTER_NAME=xxxx # TODO
 KARPENTER_QUEUE_NAME=karpenter-interruption-${EKS_CLUSTER_NAME} #
-KARPENTER_VERSION=0.37.0
 KARPENTER_NODE_AMI_FAMILY=Bottlerocket
 KARPENTER_NODE_ROLE=KarpenterNodeRole-${EKS_CLUSTER_NAME}
-KARPENTER_NODE_SG_NAME=eks-cluster-sg-xxx # TODO set existing sg
 
 #### Create ArgoCD resource####
 cat <<EOF | kubectl apply -f -
@@ -240,7 +237,7 @@ EOF
 export K8S_VERSION="1.30" # TODO
 # TODO manage by Argo CD
 cat <<EOF | kubectl apply -f -
-apiVersion: karpenter.sh/v1beta1
+apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
   name: default
@@ -267,16 +264,17 @@ spec:
           operator: Gt
           values: ["5"]
       nodeClassRef:
-        apiVersion: karpenter.k8s.aws/v1beta1
+        group: karpenter.k8s.aws
         kind: EC2NodeClass
         name: default
+      expireAfter: 720h # 30 * 24h = 720h
   limits:
     cpu: 1000
   disruption:
     consolidationPolicy: WhenUnderutilized
-    expireAfter: 720h # 30 * 24h = 720h
+    consolidateAfter: 1m
 ---
-apiVersion: karpenter.k8s.aws/v1beta1
+apiVersion: karpenter.k8s.aws/v1
 kind: EC2NodeClass
 metadata:
   name: default
@@ -288,8 +286,9 @@ spec:
         karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
   securityGroupSelectorTerms:
     - tags:
-        Name: ${KARPENTER_NODE_SG_NAME}
-#   amiSelectorTerms:
+        karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
+  amiSelectorTerms:
+  - alias: bottlerocket@v1.21.0
 #     - id: "${ARM_AMI_ID}"
 #     - id: "${AMD_AMI_ID}"
 # #   - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
