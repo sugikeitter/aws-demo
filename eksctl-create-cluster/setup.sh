@@ -260,66 +260,26 @@ EOF
 #   --set controller.resources.limits.memory=1Gi \
 #   --wait
 
-
 ## Create NodePool and EC2NodeClass
-export K8S_VERSION="1.30" # TODO
 # TODO manage by Argo CD
 cat <<EOF | kubectl apply -f -
-apiVersion: karpenter.sh/v1
-kind: NodePool
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
-  name: default
+  name: karpenter-config
+  namespace: argocd
 spec:
-  template:
-    spec:
-      requirements:
-        - key: kubernetes.io/arch
-          operator: In
-          values: ["amd64"]
-        - key: kubernetes.io/os
-          operator: In
-          values: ["linux"]
-        - key: karpenter.sh/capacity-type
-          operator: In
-          values: ["spot"]
-        - key: karpenter.k8s.aws/instance-category
-          operator: In
-          values: ["c", "m", "r"]
-        - key: karpenter.k8s.aws/instance-size
-          operator: In
-          values: ["xlarge"]
-        - key: karpenter.k8s.aws/instance-generation
-          operator: Gt
-          values: ["5"]
-      nodeClassRef:
-        group: karpenter.k8s.aws
-        kind: EC2NodeClass
-        name: default
-      expireAfter: 720h # 30 * 24h = 720h
-  limits:
-    cpu: 1000
-  disruption:
-    consolidationPolicy: WhenUnderutilized
-    consolidateAfter: 1m
----
-apiVersion: karpenter.k8s.aws/v1
-kind: EC2NodeClass
-metadata:
-  name: default
-spec:
-  amiFamily: ${KARPENTER_NODE_AMI_FAMILY}
-  role: ${KARPENTER_NODE_ROLE}
-  subnetSelectorTerms:
-    - tags:
-        karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
-  securityGroupSelectorTerms:
-    - tags:
-        karpenter.sh/discovery: ${EKS_CLUSTER_NAME}
-  amiSelectorTerms:
-  - alias: bottlerocket@v1.21.0
-#     - id: "${ARM_AMI_ID}"
-#     - id: "${AMD_AMI_ID}"
-#     - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
+  destination:
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: eksctl-create-cluster/argocd-application-file
+    repoURL: https://github.com/sugikeitter/aws-demo
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
 EOF
 
 # Setup metric server by argocd
