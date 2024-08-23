@@ -134,7 +134,6 @@ eksctl create iamserviceaccount \
   --attach-policy-arn=arn:aws:iam::`aws sts get-caller-identity --output text --query "Account"`:policy/AWSLoadBalancerControllerIAMPolicy \
   --approve
 
-
 export LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION=1.8.1 # TODO Change version
 helm repo add eks https://aws.github.io/eks-charts
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
@@ -145,13 +144,38 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   --set serviceAccount.name=aws-load-balancer-controller 
 
 # Set up Argo CD
-### Use port-forward
-kubectl port-forward svc/argocd-server -n argocd 8888:443
+### Set up argocd manualy first
+mkdir argocd-kustomize-setup
+curl https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/argocd-application-file/argocd-install-kustomize/kustomization.yaml > argocd-kustomize-setup/kustomization.yaml
+curl https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/argocd-application-file/argocd-install-kustomize/svc-argocd-server-patch.yaml > argocd-kustomize-setup/svc-argocd-server-patch.yaml
+# TODO Change argocd version
+vi argocd-kustomize-setup/kustomization.yaml
+kubectl -n argocd apply -k argocd-kustomize-setup/.
 
-### Use LoadBalancer (and Verified Access)
-# Refer https://github.com/sugikeitter/argocd-example/blob/main/setup.sh
+### Use LoadBalancer
+# Argo CD managed by Argo CD
+cat <<EOF | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/sugikeitter/aws-demo.git'
+    path: eksctl-create-cluster/argocd-application-file/argocd-install-kustomize
+    targetRevision: HEAD
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
 
-# After setup Argo CD, manage aws-load-balancer-controller in Argo CD
+# After setup Argo CD, manage aws-load-balancer-controller by Argo CD
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
