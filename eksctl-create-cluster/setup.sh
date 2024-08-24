@@ -306,8 +306,9 @@ EOF
 
 # Setup CloudWatch Container Insights EKS add-on
 ## fluent-bit pod use Node IAM role
+## Attach policy karpentar node role which is used by managed node groups
 aws iam attach-role-policy \
---role-name ${NODE_ROLE} \ # Managed node group & karpentar node
+--role-name ${KARPENTER_NODE_ROLE} \
 --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
 
 kubectl create ns amazon-cloudwatch
