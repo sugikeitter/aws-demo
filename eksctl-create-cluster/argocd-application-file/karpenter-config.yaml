@@ -20,7 +20,7 @@ spec:
           values: ["c", "m", "r"]
         - key: karpenter.k8s.aws/instance-size
           operator: In
-          values: ["xlarge"]
+          values: ["large", "xlarge", "2xlarge", "4xlarge"]
         - key: karpenter.k8s.aws/instance-generation
           operator: Gt
           values: ["5"]
