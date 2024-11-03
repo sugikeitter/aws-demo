@@ -67,6 +67,8 @@ export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output te
 export PRIVATE_SUBNET_DEF_1="ap-northeast-1a: { id: subnet-xxxxxx }" # TODO your region az and subnet ids
 export PRIVATE_SUBNET_DEF_2="ap-northeast-1c: { id: subnet-xxxxxx }" # TODO
 export PRIVATE_SUBNET_DEF_3="ap-northeast-1d: { id: subnet-xxxxxx }" # TODO
+export KARPENTER_NODE_ROLE=KarpenterNodeRole-${EKS_CLUSTER_NAME}
+
 ## eksctl create cluster
 curl -fsSL https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/existing-vpc-cluster/eksctl-cluster-with-karpenter-config-example.yaml | envsubst | eksctl create cluster -f -
 
