@@ -5,8 +5,8 @@ metadata:
   name: argocd-server-patch
 
 resources:
-- github.com/argoproj/argo-cd//manifests/cluster-install?ref=v2.11.4 # TODO Change the version you use
-#- https://github.com/argoproj/argo-cd//manifests/base?timeout=120&ref=v2.11.4 # Probably the same as above 
+- github.com/argoproj/argo-cd//manifests/cluster-install?ref=v2.12.6 # TODO Change the version you use
+#- https://github.com/argoproj/argo-cd//manifests/base?timeout=120&ref=v2.12.6 # Probably the same as above 
 
 patches:
 - path: svc-argocd-server-patch.yaml
