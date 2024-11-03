@@ -53,7 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/aws/karpenter-provider-aws/v"${KARP
 sed -i "s/QueueName: \!Sub \"/QueueName: \!Sub \"karpenter-interruption-/" "${TEMPOUT}"
 ## Create some AWS resources like IAM Roles, SQS queues
 aws cloudformation deploy \
-  --stack-name "Karpenter-${EKS_CLUSTER_NAME}" \
+  --stack-name "Karpenter-setup-resource-for-${EKS_CLUSTER_NAME}" \
   --template-file "${TEMPOUT}" \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides "ClusterName=${EKS_CLUSTER_NAME}"
