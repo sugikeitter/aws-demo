@@ -45,7 +45,7 @@ rm argocd-linux-amd64
 # prepare Karpenter (ref: https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/)
 ## Change settings
 export KARPENTER_VERSION="X.Y.Z" # TODO
-export EKS_CLUSTER_NAME=xxxx # TODO your eks cluster name
+export EKS_CLUSTER_NAME=xxxx # TODO your eks cluster name ex) "demo-eksctl-defaultvpc"
 export TEMPOUT="$(mktemp)"
 
 ## Prepare resources used by Karpenter
