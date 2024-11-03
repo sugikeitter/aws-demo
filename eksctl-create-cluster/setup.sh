@@ -118,10 +118,11 @@ EOT
 source ~/.bashrc
 
 
-################
+### Add AWS Load Balancer Contoroller (https://kubernetes-sigs.github.io/aws-load-balancer-controller) ###
+# TODO set version
+AWS_LB_CONTROLLER_VERSION=X.Y.Z
 
-# TODO version: Add AWS Load Balancer Contoroller (https://kubernetes-sigs.github.io/aws-load-balancer-controller)
-curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/vX.Y.Z/docs/install/iam_policy.json
+curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v${AWS_LB_CONTROLLER_VERSION}/docs/install/iam_policy.json
 
 # if I have created AWSLoadBalancerControllerIAMPolicy before, delete it and create new version
 aws iam delete-policy --policy-arn arn:aws:iam::${AWS_ACCOUNT_ID}:policy/AWSLoadBalancerControllerIAMPolicy
@@ -130,20 +131,19 @@ aws iam create-policy \
     --policy-name AWSLoadBalancerControllerIAMPolicy \
     --policy-document file://iam-policy.json
 
-## TODO use pod identity
+## FIXME use pod identity, if supported.
 eksctl create iamserviceaccount \
   --cluster=$EKS_CLUSTER_NAME \
   --namespace=kube-system \
   --name=aws-load-balancer-controller \
   --role-name AmazonEKSLoadBalancerControllerRole \
-  --attach-policy-arn=arn:aws:iam::`aws sts get-caller-identity --output text --query "Account"`:policy/AWSLoadBalancerControllerIAMPolicy \
+  --attach-policy-arn=arn:aws:iam::${AWS_ACCOUNT_ID}:policy/AWSLoadBalancerControllerIAMPolicy \
   --approve
 
-export LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION=1.8.1 # TODO Change version
 helm repo add eks https://aws.github.io/eks-charts
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   -n kube-system \
-  -version ${LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION} \
+  -version ${AWS_LB_CONTROLLER_VERSION} \
   --set clusterName=$EKS_CLUSTER_NAME \
   --set serviceAccount.create=false \
   --set serviceAccount.name=aws-load-balancer-controller 
