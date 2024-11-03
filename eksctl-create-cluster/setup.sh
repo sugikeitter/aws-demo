@@ -159,8 +159,11 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 mkdir argocd-kustomize-setup
 curl https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/argocd-application-file/argocd-install-kustomize/kustomization.yaml > argocd-kustomize-setup/kustomization.yaml
 curl https://raw.githubusercontent.com/sugikeitter/aws-demo/main/eksctl-create-cluster/argocd-application-file/argocd-install-kustomize/svc-argocd-server-patch.yaml > argocd-kustomize-setup/svc-argocd-server-patch.yaml
+
 # TODO Change argocd version
 vi argocd-kustomize-setup/kustomization.yaml
+
+kubectl create ns argocd
 kubectl -n argocd apply -k argocd-kustomize-setup/.
 
 ### Use LoadBalancer
