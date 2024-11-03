@@ -203,7 +203,7 @@ spec:
   project: default
   source:
     repoURL: 'https://aws.github.io/eks-charts'
-    targetRevision: ${LOAD_BALANCER_CONTROLER_HELM_CHART_VERSION} 
+    targetRevision: ${HELM_AWS_LB_CONTROLLER_VERSION} 
     chart: aws-load-balancer-controller
     helm:
       parameters:
@@ -336,7 +336,7 @@ eksctl create podidentityassociation \
     --service-account-name cloudwatch-agent \
     --permission-policy-arns="arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" \
     --role-name EKSContainerInsightsSARole 
-#    --permission-policy-arns="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/CloudWatchAgentServerPolicy, arn:aws:iam::${AWS_ACCOUNT_ID}:policy/xxxx" \
+#    --permission-policy-arns="arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy, arn:aws:iam::${AWS_ACCOUNT_ID}:policy/xxxx" \
 #    --well-known-policies="autoScaler,externalDNS" \
 
 aws eks create-addon --cluster-name ${EKS_CLUSTER_NAME} --addon-name amazon-cloudwatch-observability
