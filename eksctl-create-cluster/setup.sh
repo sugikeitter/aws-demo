@@ -166,6 +166,9 @@ vi argocd-kustomize-setup/kustomization.yaml
 kubectl create ns argocd
 kubectl -n argocd apply -k argocd-kustomize-setup/.
 
+### If use port-forwad from local machine, access "https://localhost:8888/" in local browser ###
+kubectl port-forward -n argocd svc/argocd-server 8888:443
+
 ### Use LoadBalancer
 # Argo CD managed by Argo CD
 cat <<EOF | kubectl apply -f -
