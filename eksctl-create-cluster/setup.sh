@@ -94,6 +94,8 @@ aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
 # Client setup to use EKS Cluster
 mkdir ~/.bashrc.d
 ## k8s
+kubectl completion bash >> ~/.bashrc.d/kubectl_completion.bash
+
 cat << EOT >> ~/.bashrc.d/kubectl_completion.bash
 
 # alias and auto comp
