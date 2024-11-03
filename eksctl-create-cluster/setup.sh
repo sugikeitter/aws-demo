@@ -1,6 +1,6 @@
 # for Amazon Linux 2023
-sudo dnf install git tree vim bash-completion
-## TODO envsubst
+## gettext contains envsubst
+sudo dnf install git tree vim bash-completion gettext
 
 # TODO install tools / kubect, aws-cli, eksctl, helm ...
 
@@ -42,13 +42,13 @@ sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
 
-# prepare Karpenter
+# prepare Karpenter (ref: https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/)
 ## Change settings
-export KARPENTER_VERSION="1.0.1"
+export KARPENTER_VERSION="X.Y.Z" # TODO
 export EKS_CLUSTER_NAME=xxxx # TODO your eks cluster name
 export TEMPOUT="$(mktemp)"
 
-## Prepare resources used by Karpenter (https://karpenter.sh/v1.0/getting-started/getting-started-with-karpenter/)
+## Prepare resources used by Karpenter
 curl -fsSL https://raw.githubusercontent.com/aws/karpenter-provider-aws/v"${KARPENTER_VERSION}"/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml  > "${TEMPOUT}"
 sed -i "s/QueueName: \!Sub \"/QueueName: \!Sub \"karpenter-interruption-/" "${TEMPOUT}"
 ## Create some AWS resources like IAM Roles, SQS queues
