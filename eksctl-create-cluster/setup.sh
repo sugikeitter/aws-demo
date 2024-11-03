@@ -140,13 +140,17 @@ eksctl create iamserviceaccount \
   --attach-policy-arn=arn:aws:iam::${AWS_ACCOUNT_ID}:policy/AWSLoadBalancerControllerIAMPolicy \
   --approve
 
+# TODO set version
+HELM_AWS_LB_CONTROLLER_VERSION=X.Y.Z
+
 helm repo add eks https://aws.github.io/eks-charts
+helm repo update
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
   -n kube-system \
-  -version ${AWS_LB_CONTROLLER_VERSION} \
+  --version ${HELM_AWS_LB_CONTROLLER_VERSION} \
   --set clusterName=$EKS_CLUSTER_NAME \
   --set serviceAccount.create=false \
-  --set serviceAccount.name=aws-load-balancer-controller 
+  --set serviceAccount.name=aws-load-balancer-controller
 
 # Set up Argo CD
 ### Set up argocd manualy first
