@@ -162,8 +162,14 @@ export class AlbEcs extends Construct {
     });
     const albListenerForEcsBg2 = alb.addListener('HttpListenerEcsBg2', {
       port: 9000,
-      protocol: elb.ApplicationProtocol.HTTP,
+      protocol: elb.ApplicationProtocol.HTTPS,
       open: false, // B/G 用のテストリスナーで空けている9000番ポートは、社内など特定の IP からのみに制限したいため
+      certificates: [
+        elb.ListenerCertificate.fromArn(
+          // TODO: ACM を用意して SSM にパラメータ登録が事前に必要
+          // *.alb.example.com のようなワイルドカードドメイン名での証明書にしておくことで、1 つの ALB でもホストヘッダーでターゲットグループを EC2/ECS などで分けられる
+          ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/acmarn/wildcard/albdomain'))
+      ],
     });
     albListenerForEcsBg2.addTargetGroups('EcsBg2ListenerTg', {
       targetGroups: [
