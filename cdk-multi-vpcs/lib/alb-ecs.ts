@@ -9,6 +9,7 @@ import {
   aws_route53 as r53,
   aws_route53_targets as r53tartet,
 } from 'aws-cdk-lib';
+import { SslPolicy } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 
 export interface AlbEcsProps {
@@ -144,9 +145,6 @@ export class AlbEcs extends Construct {
       priority: 2
     });
 
-
-
-
     // targetType: IP でターゲットが 0のターゲットグループを作成する場合、albListener.addTargets では指定できないため
     const targetGroupEcsBg2 = new elb.ApplicationTargetGroup(this, 'TgpEcsBg2', {
       // targetGroupName: "demoEcsR",
@@ -170,6 +168,7 @@ export class AlbEcs extends Construct {
           // *.alb.example.com のようなワイルドカードドメイン名での証明書にしておくことで、1 つの ALB でもホストヘッダーでターゲットグループを EC2/ECS などで分けられる
           ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/acmarn/wildcard/albdomain'))
       ],
+      sslPolicy: SslPolicy.RECOMMENDED_TLS,
     });
     albListenerForEcsBg2.addTargetGroups('EcsBg2ListenerTg', {
       targetGroups: [
@@ -216,8 +215,6 @@ export class AlbEcs extends Construct {
             PlatformVersion: "LATEST"
     ```
     */
-
-
 
 
     // ECS ローリングアップデート用のリソース (以降のリリースは CI/CD でタスク定義を更新)

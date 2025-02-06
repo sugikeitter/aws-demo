@@ -8,6 +8,7 @@ import {
 } from 'aws-cdk-lib'
 import { AlbEc2Asg } from './alb-ec2-asg';
 import { AlbEcs } from './alb-ecs';
+import { SslPolicy } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 // import { RdsPostgres } from './rds-postgres';
 
 export interface SharedVpcAlbProps extends StackProps {
@@ -39,9 +40,10 @@ export class AlbAppStack extends Stack {
       certificates: [
         elb.ListenerCertificate.fromArn(
           // TODO: ACM を用意して SSM にパラメータ登録が事前に必要
-          // *.alb.example.com のようなワイルドカードドメイン名での証明書にしておくことで、1 つの ALB でもホストヘッダーでターゲットグループを EC2/ECS などで分けられっる
+          // *.alb.example.com のようなワイルドカードドメイン名での証明書にしておくことで、1 つの ALB でもホストヘッダーでターゲットグループを EC2/ECS などで分けられる
           ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/acmarn/wildcard/albdomain'))
-      ]
+      ],
+      sslPolicy: SslPolicy.RECOMMENDED_TLS,
     });
 
     // TODO hostzone の情報を SSM パラメーターストアから持ってくる処理はここでやって、各 Constructor に渡す
@@ -59,8 +61,5 @@ export class AlbAppStack extends Stack {
       vpc: props.vpc,
       albListenerHttps: albListenerHttps,
     });
-
-    
-
   }
 }
