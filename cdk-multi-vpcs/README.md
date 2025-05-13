@@ -10,6 +10,8 @@ nvm alias default node
 npm install -g aws-cdk@X.Y.Z
 
 # package.json update for aws-cdk-lib and aws-cdk
+## https://www.npmjs.com/package/aws-cdk-lib
+## https://www.npmjs.com/package/aws-cdk
 npm install aws-cdk@X.Y.Z aws-cdk-lib@Z.Y.X
 ```
 
