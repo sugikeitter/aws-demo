@@ -58,8 +58,9 @@ export class AlbEc2Asg extends Construct {
     const ec2Asg = new asg.AutoScalingGroup(this, 'AsgHttp', {
       vpc: props.vpc,
       // autoScalingGroupName: "go-http",
-      healthCheck: asg.HealthCheck.elb({
-        grace: Duration.seconds(30)
+      healthChecks: asg.HealthChecks.withAdditionalChecks({
+        additionalTypes: [asg.AdditionalHealthCheckType.ELB],
+        gracePeriod: Duration.seconds(30),
       }),
       // desiredCapacity: 1, // WARN: desiredCapacity を設定すると `cdk deploy` デプロイの度に台数が更新される
       minCapacity: 1,

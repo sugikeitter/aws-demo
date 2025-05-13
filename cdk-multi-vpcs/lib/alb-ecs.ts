@@ -125,6 +125,7 @@ export class AlbEcs extends Construct {
       securityGroups:[ecsSvcBgSg],
       deploymentController: { type: ecs.DeploymentControllerType.CODE_DEPLOY },
       desiredCount: 1,
+      minHealthyPercent: 50,
     });
 
     const hostedZoneName = ssm.StringParameter.valueForStringParameter(this, '/cdk/demo/alb/domain/hostedZoneName');
@@ -255,6 +256,7 @@ export class AlbEcs extends Construct {
       vpcSubnets: props.vpc.selectSubnets({ subnetGroupName: 'privateA' }),
       securityGroups:[ecsSvcRollingSg],
       desiredCount: 1,
+      minHealthyPercent: 50
     });
     albListenerHttps.addTargets('ecs-rolling', {
       // targetGroupName: "demoEcsR",
