@@ -1,3 +1,18 @@
+## Library update command
+```bash
+# npm update (using nvm)
+nvm install --lts
+nvm alias default node
+```
+
+```bash
+# global CDK CLI version up (https://www.npmjs.com/package/aws-cdk)
+npm install -g aws-cdk@X.Y.Z
+
+# package.json update for aws-cdk-lib and aws-cdk
+npm install aws-cdk@X.Y.Z aws-cdk-lib@Z.Y.X
+```
+
 ## Build & Deoploy commands
 
 ```bash
