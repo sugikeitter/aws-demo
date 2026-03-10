@@ -239,7 +239,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'public.ecr.aws/karpenter'
+    repoURL: 'public.ecr.aws/karpenter' # repoURL: 'https://charts.karpenter.sh/' でも可能だが、この場合 helm chart の version は Karpentar の version は異なるので注意
     targetRevision: ${KARPENTER_VERSION} # TODO Change version
     chart: karpenter
     helm:
