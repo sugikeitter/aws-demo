@@ -49,7 +49,7 @@ spec:
     - tags:
         karpenter.sh/discovery: demo-eksctl-defaultvpc
   amiSelectorTerms:
-  - alias: bottlerocket@v1.21.0
+  - alias: bottlerocket@v1.56.0
 #     - id: "${ARM_AMI_ID}"
 #     - id: "${AMD_AMI_ID}"
 #     - id: "${GPU_AMI_ID}" # <- GPU Optimized AMD AMI 
